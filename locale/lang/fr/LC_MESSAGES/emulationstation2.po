@@ -5,7 +5,7 @@ msgstr ""
 "POT-Creation-Date: 2021-12-15 23:48+0100\n"
 "PO-Revision-Date: 2025-02-12\n"
 "Last-Translator: James West\n"
-"Language-Team: Batocera official\n"
+"Language-Team: \n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -478,6 +478,9 @@ msgstr "arcade vertical"
 msgid "lightgun games"
 msgstr "jeux au pistolet"
 
+msgid "wheel games"
+msgstr "jeux au volant"
+
 msgid "collections"
 msgstr "collections"
 
@@ -593,6 +596,9 @@ msgstr "SAO PAULO"
 
 msgid "SHOW UNAVAILABLE GAMES"
 msgstr "AFFICHER LES JEUX NON DISPONIBLES"
+
+msgid "Show rooms for games not present on this machine."
+msgstr "Afficher les parties des jeux non disponibles sur cette machine"
 
 msgid "GAME INDEXES"
 msgstr "INDEXATION DES JEUX"
@@ -804,17 +810,32 @@ msgstr "PARAMÈTRES DES SUCCÈS RÉTRO"
 msgid "HARDCORE MODE"
 msgstr "MODE DIFFICILE"
 
+msgid "Disable loading states, rewind and cheats for more points."
+msgstr "Désactive le chargement des sauvegardes d'état, le rembobinage et les codes de triche pour plus de points"
+
 msgid "ENCORE MODE"
 msgstr "MODE ENCORE"
+
+msgid "Unlocked achievements can be earned again."
+msgstr "Les succès débloqués peuvent de nouveau être gagnés"
 
 msgid "LEADERBOARDS"
 msgstr "TABLEAU DES SCORES"
 
+msgid "Compete in high-score and best time leaderboards (requires hardcore)."
+msgstr "Concourrez pour les tableaux des meilleurs scores et meilleurs temps"
+
 msgid "VERBOSE MODE"
 msgstr "MODE VERBEUX"
 
+msgid "Show achievement progression on game launch and other notifications."
+msgstr "Montrer la progression dans les succès et autres notifications au démarrage"
+
 msgid "AUTOMATIC SCREENSHOT"
 msgstr "CAPTURE D'ÉCRAN AUTOMATIQUE"
+
+msgid "Automatically take a screenshot when an achievement is earned."
+msgstr "Prendre une capture d'écran automatique à chaque succès obtenu"
 
 msgid "CHALLENGE INDICATORS"
 msgstr "INDICATEURS DE CHALLENGE"
@@ -842,7 +863,10 @@ msgid "PASSWORD"
 msgstr "MOT DE PASSE"
 
 msgid "SHOW RETROACHIEVEMENTS ENTRY IN MAIN MENU"
-msgstr "AFFICHER UN ACCÈS DANS LE MENU PRINCIPAL"
+msgstr "AFFICHER UN ACCÈS AUX SUCCÈS RÉTRO DANS LE MENU PRINCIPAL"
+
+msgid "View your RetroAchievement stats right from the main menu!"
+msgstr "Accéder aux stats succès rétro depuis le menu principal!"
 
 msgid "UNABLE TO ACTIVATE RETROACHIEVEMENTS:"
 msgstr "IMPOSSIBLE D’ACTIVER LES SUCCÈS RÉTRO :"
@@ -1248,7 +1272,7 @@ msgid "VENDOR"
 msgstr "FABRICANT"
 
 msgid "RENDERER"
-msgstr "GPU"
+msgstr "PROCESSEUR GRAPHIQUE"
 
 msgid "SHADERS"
 msgstr "FILTRES"
@@ -1980,7 +2004,7 @@ msgid "High numbers can result in visible jitter."
 msgstr "Un nombre élevé peur provoquer des saccades"
 
 msgid "USE SECOND INSTANCE FOR RUN-AHEAD"
-msgstr ""
+msgstr "UTILISER LA 2ÈME INSTANCE POUR L'EXÉCUTION EN AVANCE"
 
 msgid "Can prevent audio skips on button presses."
 msgstr "Peut empêcher les coupures audio lors des appuis sur les boutons"
@@ -2037,6 +2061,9 @@ msgstr "ACTIVER PERFORMANCE MAXIMUM"
 
 msgid "REWIND"
 msgstr "REMBOBINAGE"
+
+msgid "Store past states to rewind to in realtime, if the core supports it."
+msgstr "Enregistrer les anciennes sauvegardes sur lesquelles rembobiner en temps réel, si le coeur le supporte"
 
 msgid "INTEGER SCALING (PIXEL PERFECT)"
 msgstr "ECHELLE ENTIÈRE (PIXEL PARFAIT)"
@@ -2125,6 +2152,24 @@ msgstr "Charger la dernière sauvegarde d'état au lancement et sauvegarder en q
 
 msgid "INCREMENTAL SAVESTATES"
 msgstr "SAUVEGARDES INSTANTANÉES INCRÉMENTALES"
+
+msgid "INCREMENT PER SAVE"
+msgstr "A CHAQUE SAUVEGARDE"
+
+msgid "Never overwrite old savestates, always make new ones."
+msgstr "Crée un nouvel emplacement de sauvegarde à chaque sauvegarde"
+
+msgid "INCREMENT SLOT"
+msgstr "NOUVEL EMPLACEMENT"
+
+msgid "Increment slot on a new game."
+msgstr "Crée un nouvel emplacement de sauvegarde au lancement d'une partie"
+
+msgid "DO NOT INCREMENT"
+msgstr "EMPLACEMENT ACTUEL"
+
+msgid "Use current slot on a new game."
+msgstr "Utilise le premier emplacement de sauvegarde au lancement d'une partie"
 
 msgid "NEW GAME CREATES NEW SLOT"
 msgstr "NOUVEAU JEU CRÉE UN NOUVEAU SLOT"
@@ -3335,10 +3380,25 @@ msgid "SHOW GUN ICON"
 msgstr "AFFICHER L'ICÔNE PISTOLET"
 
 msgid "SHOW WHEEL ICON"
-msgstr "AFFICHER L'ICÔNE ROUE"
+msgstr "AFFICHER L'ICÔNE VOLANT"
 
 msgid "ADJUST FRAME BORDERS"
 msgstr "AJUSTER LES BORDURES D'ÉCRAN"
+
+msgid "FRAME BORDERS"
+msgstr "BORDURES D'ÉCRAN"
+
+msgid "LEFT BORDER"
+msgstr "BORDURE DE GAUCHE"
+
+msgid "TOP BORDER"
+msgstr "BORDURE DU HAUT"
+
+msgid "RIGHT BORDER"
+msgstr "BORDURE DE DROITE"
+
+msgid "BOTTOM BORDER"
+msgstr "BORDURE DU BAS"
 
 msgid "PAIR BLUETOOTH PADS AUTOMATICALLY"
 msgstr "APPAIRER AUTOMATIQUEMENT LES MANETTES BLUETOOTH"
@@ -3380,7 +3440,7 @@ msgid "Also turns on the emulator's native FPS counter, if available."
 msgstr "Active également le compteur FPS en jeu si disponible"
 
 msgid "Remove unused entries, and clean references to missing medias."
-msgstr "supprimer les entrées non-utilisées et nettoyer les références aux médias manquants"
+msgstr "Supprimer les entrées non-utilisées et nettoyer les références aux médias manquants"
 
 msgid "RESET GAMELISTS USAGE DATA"
 msgstr "RÉINITIALISER LES DONNÉES D'UTILISATION DES LISTES DE JEUX"
@@ -3453,6 +3513,18 @@ msgstr "Disponibles"
 
 msgid "GRAPHICS API"
 msgstr "API GRAPHIQUE"
+
+msgid "ACCOUNTS"
+msgstr "COMPTES"
+
+msgid "Installed systems"
+msgstr "Systèmes installés"
+
+msgid "BIOS SETTINGS"
+msgstr "BIOS"
+
+msgid "CORE PROVIDED"
+msgstr "FOURNI PAR LE COEUR"
 
 #~ msgid "this game's name"
 #~ msgstr "nom du jeu"
