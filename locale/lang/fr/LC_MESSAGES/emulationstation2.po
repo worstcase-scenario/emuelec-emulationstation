@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: emulationstation\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-12-15 23:48+0100\n"
-"PO-Revision-Date: 2025-02-12\n"
+"PO-Revision-Date: 2025-02-18\n"
 "Last-Translator: James West\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -1593,7 +1593,7 @@ msgstr ""
 "SI VOUS VOULEZ GARDER VOS RÉGLAGES FAITES-EN UNE COPIE ET SAUVEGARDEZ-LA "
 "SUR UN DISQUE EXTERNE AVANT D'ACTIVER CETTE OPTION !\n"
 "\n"
-"RESET SYSTEM TO DEFAULT CONFIG AND RESTART?"
+"RÉINITIALISER LE SYSTÈME AVEC LA CONFIG PAR DÉFAUT ET REDÉMARRER ?"
 
 msgid "FORCE UPDATE"
 msgstr "FORCER LA MISE À JOUR"
@@ -3525,6 +3525,45 @@ msgstr "BIOS"
 
 msgid "CORE PROVIDED"
 msgstr "FOURNI PAR LE COEUR"
+
+msgid "PREFERED REGION"
+msgstr "RÉGION PRÉFÉRÉE"
+
+msgid "OVERWRITE DESCRIPTIONS"
+msgstr "ÉCRASER LES DESCRIPTIONS"
+
+msgid "OVERWRITE MEDIAS"
+msgstr "ÉCRASER LES MÉDIAS"
+
+msgid "SCRAPE FOR"
+msgstr "SCRAPER"
+
+msgid "COMMUNITY RATING"
+msgstr "NOTES"
+
+msgid "BEZEL (16:9)"
+msgstr "BEZEL (16/9)"
+
+msgid "BOX BACKSIDE"
+msgstr "ARRIÈRE DES BOITES"
+
+msgid "MAP"
+msgstr "CARTE"
+
+msgid "MANUAL"
+msgstr "MANUEL"
+
+msgid "PADTOKEY SETTINGS"
+msgstr "PARAMÈTRES PADTOKEY"
+
+msgid "ACCOUNT"
+msgstr "COMPTE"
+
+msgid "JAPAN"
+msgstr "JAPON"
+
+msgid "WORLD"
+msgstr "MONDE"
 
 #~ msgid "this game's name"
 #~ msgstr "nom du jeu"
