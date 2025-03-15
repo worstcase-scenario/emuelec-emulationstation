@@ -4604,7 +4604,7 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 		
 		s->addEntry(_("KILL LIBRESPOT"), false, [] {
             system("/emuelec/scripts/librekill.sh");
-        }, "iconShutdown");
+        }, "iconLibrekill");
 
 		
 		s->addEntry(_("REBOOT FROM NAND"), false, [window] {
