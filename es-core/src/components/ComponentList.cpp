@@ -7,6 +7,7 @@
 #include "components/SliderComponent.h"
 #include "components/OptionListComponent.h"
 #include "InputManager.h"
+#include "Sound.h"
 
 #define TOTAL_HORIZONTAL_PADDING_PX 20
 
@@ -242,7 +243,7 @@ void ComponentList::onCursorChanged(const CursorState& state)
 		mCursorChangedCallback(state);
 
 	updateHelpPrompts();
-
+Sound::get("/storage/.emulationstation/resources/mscroll.ogg")->play();
 	// tts
 	if (state == CURSOR_STOPPED && mOldCursor != mCursor)
 		saySelectedLine();
