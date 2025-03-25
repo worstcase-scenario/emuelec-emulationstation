@@ -242,14 +242,18 @@ void ComponentList::onCursorChanged(const CursorState& state)
 	if (mCursorChangedCallback)
 		mCursorChangedCallback(state);
 
-	updateHelpPrompts();
-//  Sound::get("/storage/.emulationstation/resources/mscroll.ogg")->play();
-	// tts
-	if (state == CURSOR_STOPPED && mOldCursor != mCursor)
-		saySelectedLine();
-	if (mOldCursor != mCursor)
-    Sound::get("/storage/.emulationstation/resources/mscroll.ogg")->play();
+ updateHelpPrompts();
 
+    // Sound nur abspielen, wenn sich der Cursor tatsächlich geändert hat
+    if (mOldCursor != mCursor) 
+    {
+        Sound::get("/storage/.emulationstation/resources/mscroll.ogg")->play();
+    }
+
+    if (state == CURSOR_STOPPED && mOldCursor != mCursor)
+        saySelectedLine();
+
+    mOldCursor = mCursor; // Speichert die neue Position
 }
 
 void ComponentList::saySelectedLine()
