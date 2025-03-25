@@ -243,7 +243,7 @@ void ComponentList::onCursorChanged(const CursorState& state)
 		mCursorChangedCallback(state);
 
 	updateHelpPrompts();
-Sound::get("/storage/.emulationstation/resources/mscroll.ogg")->play();
+//  Sound::get("/storage/.emulationstation/resources/mscroll.ogg")->play();
 	// tts
 	if (state == CURSOR_STOPPED && mOldCursor != mCursor)
 		saySelectedLine();
@@ -573,9 +573,13 @@ std::vector<HelpPrompt> ComponentList::getHelpPrompts()
 
 bool ComponentList::moveCursor(int amt)
 {
-	bool ret = listInput(amt);
-	listInput(0);
-	return ret;
+    bool ret = listInput(amt);
+    listInput(0);
+
+    if (ret)
+        Sound::get("/storage/.emulationstation/resources/mscroll.ogg")->play();
+
+    return ret;
 }
 
 std::string ComponentList::getSelectedUserData()
