@@ -11,6 +11,10 @@
 
 #define TOTAL_HORIZONTAL_PADDING_PX 20
 
+// Statische Variable für den Sound, damit er nur einmal geladen wird
+
+static std::shared_ptr<Sound> scrollSound = nullptr;
+
 ComponentList::ComponentList(Window* window) : IList<ComponentListRow, std::string>(window, LIST_SCROLL_STYLE_SLOW, LIST_NEVER_LOOP), mScrollbar(window)
 {
 	mHotRow = -1;
@@ -244,11 +248,14 @@ void ComponentList::onCursorChanged(const CursorState& state)
 
  updateHelpPrompts();
 
-    // Sound nur abspielen, wenn sich der Cursor tatsächlich geändert hat
     if (mOldCursor != mCursor) 
-    {
-        Sound::get("/storage/.emulationstation/resources/mscroll.ogg")->play();
-    }
+{
+    if (!scrollSound) // Nur einmal laden
+        scrollSound = Sound::get("/storage/.emulationstation/resources/mscroll.ogg");
+
+    if (scrollSound)
+        scrollSound->play();
+}
 
     if (state == CURSOR_STOPPED && mOldCursor != mCursor)
         saySelectedLine();
