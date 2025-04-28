@@ -7,8 +7,13 @@
 #include "components/SliderComponent.h"
 #include "components/OptionListComponent.h"
 #include "InputManager.h"
+#include "Sound.h"
 
 #define TOTAL_HORIZONTAL_PADDING_PX 20
+
+// static variable for scroll sound
+
+static std::shared_ptr<Sound> scrollSound = nullptr;
 
 ComponentList::ComponentList(Window* window) : IList<ComponentListRow, std::string>(window, LIST_SCROLL_STYLE_SLOW, LIST_NEVER_LOOP), mScrollbar(window)
 {
@@ -241,11 +246,21 @@ void ComponentList::onCursorChanged(const CursorState& state)
 	if (mCursorChangedCallback)
 		mCursorChangedCallback(state);
 
-	updateHelpPrompts();
+ updateHelpPrompts();
 
-	// tts
-	if (state == CURSOR_STOPPED && mOldCursor != mCursor)
-		saySelectedLine();
+    if (mOldCursor != mCursor) 
+{
+    if (!scrollSound) 
+        scrollSound = Sound::get("/storage/.emulationstation/resources/mscroll.ogg");
+
+    if (scrollSound)
+        scrollSound->play();
+}
+
+    if (state == CURSOR_STOPPED && mOldCursor != mCursor)
+        saySelectedLine();
+
+    mOldCursor = mCursor; 
 }
 
 void ComponentList::saySelectedLine()
@@ -724,4 +739,3 @@ bool ComponentList::onMouseWheel(int delta)
 
 	return true;
 }
-
