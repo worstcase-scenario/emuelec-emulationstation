@@ -8,10 +8,34 @@
 #include "components/OptionListComponent.h"
 #include "InputManager.h"
 #include "Sound.h"
+#include <fstream>
+#include <string>
+
+static std::string getMenuNavSoundPath() {
+    std::ifstream conf("/storage/.config/emuelec/configs/emuelec.conf");
+    if (!conf.is_open())
+        return "/storage/.emulationstation/resources/mscroll.ogg"; // Fallback
+
+    std::string line;
+    const std::string key = "ee_menuscrollsound=";
+    while (std::getline(conf, line)) {
+        if (line.find(key) == 0) {
+            std::string value = line.substr(key.length());
+            // Whitespace entfernen
+            size_t start = value.find_first_not_of(" \t\r\n");
+            size_t end = value.find_last_not_of(" \t\r\n");
+            if (start != std::string::npos && end != std::string::npos)
+                value = value.substr(start, end - start + 1);
+            return value.empty() ? "/storage/.emulationstation/resources/mscroll.ogg" : value;
+        }
+    }
+    return "/storage/.emulationstation/resources/mscroll.ogg";
+}
+
 
 #define TOTAL_HORIZONTAL_PADDING_PX 20
 
-// Statische Variable für den Sound, damit er nur einmal geladen wird
+// static variable for scroll sound
 
 static std::shared_ptr<Sound> scrollSound = nullptr;
 
@@ -250,8 +274,9 @@ void ComponentList::onCursorChanged(const CursorState& state)
 
     if (mOldCursor != mCursor) 
 {
-    if (!scrollSound) // Nur einmal laden
-        scrollSound = Sound::get("/storage/.emulationstation/resources/mscroll.ogg");
+    if (!scrollSound)
+    scrollSound = Sound::get(getMenuNavSoundPath());
+
 
     if (scrollSound)
         scrollSound->play();
@@ -260,7 +285,7 @@ void ComponentList::onCursorChanged(const CursorState& state)
     if (state == CURSOR_STOPPED && mOldCursor != mCursor)
         saySelectedLine();
 
-    mOldCursor = mCursor; // Speichert die neue Position
+    mOldCursor = mCursor; 
 }
 
 void ComponentList::saySelectedLine()
@@ -739,4 +764,3 @@ bool ComponentList::onMouseWheel(int delta)
 
 	return true;
 }
-
