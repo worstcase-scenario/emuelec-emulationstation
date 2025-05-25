@@ -969,6 +969,10 @@ void GuiMenu::createGamepadConfig(Window* window, GuiSettings* systemConfigurati
         window->pushGui(new GuiMsgBox(window, _("Error while running script."), _("OK")));
 });
 
+	
+		s->addEntry(_("KILL LIBRESPOT"), false, [] {
+            system("/emuelec/scripts/librekill.sh");
+        }, "iconShutdown");
 
 
 
