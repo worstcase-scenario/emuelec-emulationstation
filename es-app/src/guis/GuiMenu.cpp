@@ -969,13 +969,6 @@ void GuiMenu::createGamepadConfig(Window* window, GuiSettings* systemConfigurati
         window->pushGui(new GuiMsgBox(window, _("Error while running script."), _("OK")));
 });
 
-	
-		s->addEntry(_("KILL LIBRESPOT"), false, [] {
-            system("/emuelec/scripts/librekill.sh");
-        }, "iconShutdown");
-
-
-
 
 	// Advmame Gamepad
 	auto enable_advmamegp = std::make_shared<SwitchComponent>(window);
@@ -4927,6 +4920,11 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 				Utils::Platform::quitES(Utils::Platform::QuitMode::QUIT);
 			}, _("NO"), nullptr));
 		}, "iconControllers");
+		
+			
+		s->addEntry(_("KILL LIBRESPOT"), false, [] {
+            system("/emuelec/scripts/librekill.sh");
+        }, "iconShutdown");
 		
 			
 		s->addEntry(_("REBOOT FROM NAND"), false, [window] {
