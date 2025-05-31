@@ -4959,6 +4959,10 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 
 	if (quickAccessMenu)
 		s->addGroup(_("QUIT"));
+	
+	s->addEntry(_("KILL LIBRESPOT"), false, [] {
+            system("/emuelec/scripts/librekill.sh");Add commentMore actions
+    }, "iconShutdown");
 
 	s->addEntry(_("RESTART SYSTEM"), false, [window] {
 		window->pushGui(new GuiMsgBox(window, _("REALLY RESTART?"), 
