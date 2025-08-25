@@ -180,7 +180,7 @@ namespace Utils
 			return system("shutdown -s -t 0");
 #else // osx / linux	
 #ifdef _ENABLEEMUELEC
-	  system("/emuelec/scripts/librekill.sh");
+	  system("systemctl stop librespot.service");
       system("/usr/bin/emuelec-utils small-cores enable");
 	  
 			return system("systemctl poweroff");
@@ -196,7 +196,7 @@ namespace Utils
 			return system("shutdown -r -t 0");
 #else // osx / linux	
 #ifdef _ENABLEEMUELEC
-			system("/emuelec/scripts/librekill.sh");
+			system("systemctl stop librespot.service");
             system("/usr/bin/emuelec-utils small-cores enable");
 			return system("systemctl reboot");	
 #else
