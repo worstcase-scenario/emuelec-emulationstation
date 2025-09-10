@@ -3,6 +3,8 @@
 #include "GuiComponent.h"
 #include "components/MenuComponent.h"
 #include "ApiSystem.h"
+#include "components/ImageComponent.h"
+#include <memory>
 
 template<typename T>
 class OptionListComponent;
@@ -20,7 +22,7 @@ public:
 		ALL = 255
 	};
 
-	GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types = FileTypes::IMAGES, const std::function<void(const std::string&)>& okCallback = nullptr, const std::string& title = "");
+        GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types = FileTypes::IMAGES, const std::function<void(const std::string&)>& okCallback = nullptr, const std::string& title = "", bool showPreview = false);
 
 	bool input(InputConfig* config, Input input) override;
 	virtual std::vector<HelpPrompt> getHelpPrompts() override;
@@ -30,11 +32,12 @@ private:
 	void navigateTo(const std::string path);
 	void centerWindow();
 
-	MenuComponent mMenu;	
+        MenuComponent mMenu;
+        std::unique_ptr<ImageComponent> mPreview;
 
-	std::string mCurrentPath;
-	std::string mSelectedFile;
-	FileTypes   mTypes;
+        std::string mCurrentPath;
+        std::string mSelectedFile;
+        FileTypes   mTypes;
 
-	std::function<void(const std::string&)> mOkCallback;
+        std::function<void(const std::string&)> mOkCallback;
 };
