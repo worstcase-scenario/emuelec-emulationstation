@@ -230,7 +230,7 @@ void GuiSettings::addInputTextRow(const std::string& title, const std::string& s
 	addRow(row);
 }
 
-void GuiSettings::addFileBrowser(const std::string& title, const std::string& settingsID, GuiFileBrowser::FileTypes type, bool storeInSettings)
+void GuiSettings::addFileBrowser(const std::string& title, const std::string& settingsID, GuiFileBrowser::FileTypes type, bool storeInSettings, bool showPreview)
 {
 	Window* window = mWindow;
 
@@ -270,11 +270,11 @@ void GuiSettings::addFileBrowser(const std::string& title, const std::string& se
 			SystemConf::getInstance()->set(localSettingsID, newVal);
 	};
 
-	row.makeAcceptInputHandler([window, title, type, ed, updateVal]
-	{
-		auto parent = Utils::FileSystem::getParent(ed->getValue());
-		window->pushGui(new GuiFileBrowser(window, parent, ed->getValue(), type, updateVal, title));
-	});
+        row.makeAcceptInputHandler([window, title, type, ed, updateVal, showPreview]
+        {
+                auto parent = Utils::FileSystem::getParent(ed->getValue());
+                window->pushGui(new GuiFileBrowser(window, parent, ed->getValue(), type, updateVal, title, showPreview));
+        });
 
 	ed->setValue(value);
 

@@ -612,7 +612,7 @@ enable_customsplashimage->setState(customSplashImageEnabled);
 s->addWithLabel(_("ENABLE CUSTOM SPLASH IMAGE"), enable_customsplashimage);
 
 // File picker for custom splash image
-s->addFileBrowser(_("CUSTOM SPLASH IMAGE"), "ee_customsplashimage", GuiFileBrowser::IMAGES);
+        s->addFileBrowser(_("CUSTOM SPLASH IMAGE"), "ee_customsplashimage", GuiFileBrowser::IMAGES, false, true);
 
 // Custom splash video
 auto enable_customsplashvideo = std::make_shared<SwitchComponent>(mWindow);
@@ -681,7 +681,7 @@ enable_customexitsplashimage->setState(customExitSplashImageEnabled);
 s->addWithLabel(_("ENABLE CUSTOM EXIT-SPLASH IMAGE"), enable_customexitsplashimage);
 
 // File picker for custom splash image
-s->addFileBrowser(_("CUSTOM EXIT-SPLASH IMAGE"), "ee_customexitsplashimage", GuiFileBrowser::IMAGES);
+        s->addFileBrowser(_("CUSTOM EXIT-SPLASH IMAGE"), "ee_customexitsplashimage", GuiFileBrowser::IMAGES, false, true);
 
 
 // Custom exit-splash video

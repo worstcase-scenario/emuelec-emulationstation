@@ -11,6 +11,7 @@
 #include "GuiLoading.h"
 #include "guis/GuiMsgBox.h"
 #include <cstring>
+#include <algorithm>
 #include "SystemConf.h"
 #include "Paths.h"
 
@@ -25,16 +26,36 @@
 
 
 
-GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types, const std::function<void(const std::string&)>& okCallback, const std::string& title)
-	: GuiComponent(window), mMenu(window, title.empty() ? _("FILE BROWSER") : title)
+GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types, const std::function<void(const std::string&)>& okCallback, const std::string& title, bool showPreview)
+        : GuiComponent(window), mMenu(window, title.empty() ? _("FILE BROWSER") : title)
 {
-	setTag("popup");
+        setTag("popup");
 
-	mTypes = types;
-	mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
-	mOkCallback = okCallback;
+        mTypes = types;
+        mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
+        mOkCallback = okCallback;
 
-	addChild(&mMenu);
+        addChild(&mMenu);
+
+        if (showPreview && (mTypes & FileTypes::IMAGES) == FileTypes::IMAGES)
+        {
+                mPreview = std::make_unique<ImageComponent>(window);
+                addChild(mPreview.get());
+
+                mMenu.getList()->setCursorChangedCallback([this](CursorState state)
+                {
+                        if (state == CURSOR_STOPPED && mPreview)
+                        {
+                                auto path = mMenu.getSelected();
+                                auto ext = Utils::FileSystem::getExtension(path);
+                                if (!path.empty() && !Utils::FileSystem::isDirectory(path) &&
+                                        (ext == ".jpg" || ext == ".png" || ext == ".gif" || ext == ".svg"))
+                                        mPreview->setImage(path);
+                                else
+                                        mPreview->setImage("");
+                        }
+                });
+        }
 
 	if (mOkCallback != nullptr)
 	{
@@ -46,16 +67,19 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 
     mMenu.addButton(_("BACK"), "back", [&] { delete this; });
 
-	if (startPath.empty() || !Utils::FileSystem::isDirectory(startPath))
-	{
-		mCurrentPath = Settings::getInstance()->getString("LastFileBrowserFolder");
-		if (mCurrentPath.empty() || !Utils::FileSystem::isDirectory(mCurrentPath))
-			mCurrentPath = Paths::getScreenShotPath();
+        if (startPath.empty() || !Utils::FileSystem::isDirectory(startPath))
+        {
+                mCurrentPath = Settings::getInstance()->getString("LastFileBrowserFolder");
+                if (mCurrentPath.empty() || !Utils::FileSystem::isDirectory(mCurrentPath))
+                        mCurrentPath = Paths::getScreenShotPath();
 
-		navigateTo(mCurrentPath);
-	}
-	else
-		navigateTo(startPath);
+                navigateTo(mCurrentPath);
+        }
+        else
+                navigateTo(startPath);
+
+        if (mPreview && mMenu.getList()->getCursorChangedCallback())
+                mMenu.getList()->getCursorChangedCallback()(CURSOR_STOPPED);
 }
 
 void GuiFileBrowser::navigateTo(const std::string path)
@@ -141,18 +165,40 @@ void GuiFileBrowser::navigateTo(const std::string path)
 		}
 	}
 
-	centerWindow();	
+        centerWindow();
+
+        if (mPreview && mMenu.getList()->getCursorChangedCallback())
+                mMenu.getList()->getCursorChangedCallback()(CURSOR_STOPPED);
 }
 
 void GuiFileBrowser::centerWindow()
 {
-	if (Renderer::ScreenSettings::fullScreenMenus())
-		mMenu.setSize(Renderer::getScreenWidth(), Renderer::getScreenHeight());
-	else
-	{
-		mMenu.setSize(mMenu.getSize().x(), Renderer::getScreenHeight() * 0.875f);
-		mMenu.setPosition((Renderer::getScreenWidth() - mMenu.getSize().x()) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
-	}
+        float height = Renderer::ScreenSettings::fullScreenMenus() ? Renderer::getScreenHeight() : Renderer::getScreenHeight() * 0.875f;
+
+        if (mPreview)
+        {
+                float menuWidth = mMenu.getSize().x();
+                float previewWidth = std::max(0.0f, Renderer::getScreenWidth() - menuWidth);
+                float posX = (Renderer::getScreenWidth() - (menuWidth + previewWidth)) / 2;
+                float posY = (Renderer::getScreenHeight() - height) / 2;
+
+                mMenu.setSize(menuWidth, height);
+                mMenu.setPosition(posX, posY);
+
+                mPreview->setMaxSize(previewWidth, height);
+                mPreview->setPosition(posX + menuWidth, posY);
+        }
+        else
+        {
+                if (Renderer::ScreenSettings::fullScreenMenus())
+                        mMenu.setSize(Renderer::getScreenWidth(), Renderer::getScreenHeight());
+                else
+                {
+                        mMenu.setSize(mMenu.getSize().x(), height);
+                        mMenu.setPosition((Renderer::getScreenWidth() - mMenu.getSize().x()) / 2,
+                                (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
+                }
+        }
 }
 
 bool GuiFileBrowser::input(InputConfig* config, Input input)
