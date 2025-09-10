@@ -2,7 +2,9 @@
 
 #include "GuiComponent.h"
 #include "components/MenuComponent.h"
+#include "components/ImageGridComponent.h"
 #include "ApiSystem.h"
+#include "ThemeData.h"
 
 template<typename T>
 class OptionListComponent;
@@ -36,5 +38,26 @@ private:
 	std::string mSelectedFile;
 	FileTypes   mTypes;
 
-	std::function<void(const std::string&)> mOkCallback;
+        std::function<void(const std::string&)> mOkCallback;
+};
+
+// A thumbnail oriented file browser using an image grid
+class GuiImageFileBrowser : public GuiComponent
+{
+public:
+        GuiImageFileBrowser(Window* window, const std::string startPath, const std::string selectedFile,
+                const std::function<void(const std::string&)>& okCallback = nullptr, const std::string& title = "");
+
+        bool input(InputConfig* config, Input input) override;
+        std::vector<HelpPrompt> getHelpPrompts() override;
+
+private:
+        void navigateTo(const std::string& path);
+        void onSelected(const std::string& path);
+
+        ImageGridComponent<std::string> mGrid;
+        std::shared_ptr<ThemeData> mTheme;
+        std::string mCurrentPath;
+        std::string mSelectedFile;
+        std::function<void(const std::string&)> mOkCallback;
 };

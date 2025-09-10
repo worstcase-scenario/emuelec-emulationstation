@@ -230,7 +230,7 @@ void GuiSettings::addInputTextRow(const std::string& title, const std::string& s
 	addRow(row);
 }
 
-void GuiSettings::addFileBrowser(const std::string& title, const std::string& settingsID, GuiFileBrowser::FileTypes type, bool storeInSettings)
+void GuiSettings::addFileBrowser(const std::string& title, const std::string& settingsID, GuiFileBrowser::FileTypes type, bool storeInSettings, bool useThumbnailBrowser)
 {
 	Window* window = mWindow;
 
@@ -270,11 +270,14 @@ void GuiSettings::addFileBrowser(const std::string& title, const std::string& se
 			SystemConf::getInstance()->set(localSettingsID, newVal);
 	};
 
-	row.makeAcceptInputHandler([window, title, type, ed, updateVal]
-	{
-		auto parent = Utils::FileSystem::getParent(ed->getValue());
-		window->pushGui(new GuiFileBrowser(window, parent, ed->getValue(), type, updateVal, title));
-	});
+        row.makeAcceptInputHandler([window, title, type, ed, updateVal, useThumbnailBrowser]
+        {
+                auto parent = Utils::FileSystem::getParent(ed->getValue());
+                if (useThumbnailBrowser && type == GuiFileBrowser::IMAGES)
+                        window->pushGui(new GuiImageFileBrowser(window, parent, ed->getValue(), updateVal, title));
+                else
+                        window->pushGui(new GuiFileBrowser(window, parent, ed->getValue(), type, updateVal, title));
+        });
 
 	ed->setValue(value);
 
