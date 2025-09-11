@@ -2,6 +2,8 @@
 
 #include "ApiSystem.h"
 #include "components/OptionListComponent.h"
+#include "components/ImageComponent.h"
+#include "utils/StringUtil.h"
 #include "guis/GuiSettings.h"
 #include "views/ViewController.h"
 #include "components/ComponentGrid.h"
@@ -34,7 +36,27 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 	mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
 	mOkCallback = okCallback;
 
-	addChild(&mMenu);
+        addChild(&mMenu);
+
+        mPreview = std::make_shared<ImageComponent>(window);
+        mPreview->setVisible(false);
+        addChild(mPreview.get());
+
+                mMenu.getList()->setCursorChangedCallback([this](CursorState state)
+        {
+                std::string path = mMenu.getSelected();
+                std::string ext = Utils::String::toLower(Utils::FileSystem::getExtension(path));
+                if (ext == ".jpg" || ext == ".png" || ext == ".gif" || ext == ".svg")
+                {
+                        mPreview->setImage(path);
+                        mPreview->setVisible(true);
+                }
+                else
+                {
+                        mPreview->setImage("");
+                        mPreview->setVisible(false);
+                }
+        });
 
 	if (mOkCallback != nullptr)
 	{
@@ -141,18 +163,30 @@ void GuiFileBrowser::navigateTo(const std::string path)
 		}
 	}
 
-	centerWindow();	
+        centerWindow();
+
+        if (mMenu.size() > 0 && mMenu.getList()->getCursorChangedCallback())
+                mMenu.getList()->getCursorChangedCallback()(CURSOR_STOPPED);
 }
 
 void GuiFileBrowser::centerWindow()
 {
-	if (Renderer::ScreenSettings::fullScreenMenus())
-		mMenu.setSize(Renderer::getScreenWidth(), Renderer::getScreenHeight());
-	else
-	{
-		mMenu.setSize(mMenu.getSize().x(), Renderer::getScreenHeight() * 0.875f);
-		mMenu.setPosition((Renderer::getScreenWidth() - mMenu.getSize().x()) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
-	}
+        float previewWidth = Renderer::getScreenWidth() * 0.3f;
+        float menuWidth = Renderer::getScreenWidth() - previewWidth;
+
+        if (Renderer::ScreenSettings::fullScreenMenus())
+        {
+                mMenu.setSize(menuWidth, Renderer::getScreenHeight());
+                mMenu.setPosition(0, 0);
+        }
+        else
+        {
+                mMenu.setSize(menuWidth, Renderer::getScreenHeight() * 0.875f);
+                mMenu.setPosition((Renderer::getScreenWidth() - (menuWidth + previewWidth)) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
+        }
+
+        mPreview->setPosition(mMenu.getPosition().x() + mMenu.getSize().x(), mMenu.getPosition().y());
+        mPreview->setMaxSize(previewWidth, mMenu.getSize().y());
 }
 
 bool GuiFileBrowser::input(InputConfig* config, Input input)
