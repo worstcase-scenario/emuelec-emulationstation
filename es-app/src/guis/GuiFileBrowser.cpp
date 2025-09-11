@@ -1,5 +1,11 @@
 #include "guis/GuiFileBrowser.h"
 
+#include "components/VideoVlcComponent.h"
+#ifdef _RPI_
+#include "Settings.h"
+#include "components/VideoPlayerComponent.h"
+#endif
+
 #include "ApiSystem.h"
 #include "components/OptionListComponent.h"
 #include "guis/GuiSettings.h"
@@ -31,20 +37,57 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 	setTag("popup");
 
 	mTypes = types;
-	mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
-	mOkCallback = okCallback;
+        mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
+        mOkCallback = okCallback;
 
-	addChild(&mMenu);
+#ifdef _RPI_
+        if (Settings::getInstance()->getBool("VideoOmxPlayer"))
+                mPreview = std::make_shared<VideoPlayerComponent>(window, "");
+        else
+#endif
+                mPreview = std::make_shared<VideoVlcComponent>(window);
+        mPreview->setVisible(false);
+        addChild(mPreview.get());
 
-	if (mOkCallback != nullptr)
-	{
-		mMenu.addButton(_("RESET"), "back", [&]
-		{
-			onOk("");			
-		});
-	}
+        addChild(&mMenu);
 
-    mMenu.addButton(_("BACK"), "back", [&] { delete this; });
+        if (mOkCallback != nullptr)
+        {
+                mMenu.addButton(_("RESET"), "back", [&]
+                {
+                        onOk("");
+                });
+        }
+
+    mMenu.addButton(_("BACK"), "back", [&] { mPreview->setVideo(""); delete this; });
+
+        mMenu.getList()->setCursorChangedCallback([&](const CursorState& state)
+        {
+                if (state != CursorState::CURSOR_STOPPED)
+                        return;
+
+                auto path = mMenu.getSelected();
+                std::string ext = Utils::String::toLower(Utils::FileSystem::getExtension(path));
+
+                if (ext == ".jpg" || ext == ".png" || ext == ".gif" || ext == ".svg")
+                {
+                        mPreview->setVideo("");
+                        mPreview->setImage(path);
+                        mPreview->setVisible(true);
+                }
+                else if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm")
+                {
+                        mPreview->setImage("");
+                        mPreview->setVideo(path);
+                        mPreview->setVisible(true);
+                }
+                else
+                {
+                        mPreview->setVideo("");
+                        mPreview->setImage("");
+                        mPreview->setVisible(false);
+                }
+        });
 
 	if (startPath.empty() || !Utils::FileSystem::isDirectory(startPath))
 	{
@@ -60,14 +103,18 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 
 void GuiFileBrowser::navigateTo(const std::string path)
 {
-	mCurrentPath = path;
+        mCurrentPath = path;
 
-	auto theme = ThemeData::getMenuTheme();
+        mPreview->setVideo("");
+        mPreview->setImage("");
+        mPreview->setVisible(false);
 
-	mMenu.clear();
-	mMenu.setSubTitle(mCurrentPath);
+        auto theme = ThemeData::getMenuTheme();
 
-	auto files = Utils::FileSystem::getDirectoryFiles(mCurrentPath);
+        mMenu.clear();
+        mMenu.setSubTitle(mCurrentPath);
+
+        auto files = Utils::FileSystem::getDirectoryFiles(mCurrentPath);
 
 	if (mCurrentPath != "\\" && mCurrentPath != "/" && !mCurrentPath.empty())
 	{
@@ -101,58 +148,80 @@ void GuiFileBrowser::navigateTo(const std::string path)
 		}, "", isSelected, false, file.path, false);
 	}
 
-	if (mTypes != FileTypes::DIRECTORY)
-	{
-		for (auto file : files)
-		{
-			if (file.directory || file.hidden)
-				continue;
+        if (mTypes != FileTypes::DIRECTORY)
+        {
+                for (auto file : files)
+                {
+                        if (file.directory || file.hidden)
+                                continue;
 
-			std::string ext = Utils::FileSystem::getExtension(file.path);
+                        std::string ext = Utils::FileSystem::getExtension(file.path);
 
-			std::string icon;
-			
-			
+                        std::string icon;
 
-			if ((mTypes & FileTypes::IMAGES) == FileTypes::IMAGES)
-				if (ext == ".jpg" || ext == ".png" || ext == ".gif" || ext == ".svg")
-					icon = IMAGE_ICON;
 
-			if ((mTypes & FileTypes::MANUALS) == FileTypes::MANUALS)
-				if (ext == ".pdf" || ext == ".cbz")
-					icon = DOCUMENT_ICON;
 
-			if ((mTypes & FileTypes::VIDEO) == FileTypes::VIDEO)
-				if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm")
-					icon = VIDEO_ICON;
-				
-			if ((mTypes & FileTypes::AUDIO) == FileTypes::AUDIO)
-				if (ext == ".ogg" || ext == ".mp3" || ext == ".wav")
-					icon = AUDIO_ICON;
+                        if ((mTypes & FileTypes::IMAGES) == FileTypes::IMAGES)
+                                if (ext == ".jpg" || ext == ".png" || ext == ".gif" || ext == ".svg")
+                                        icon = IMAGE_ICON;
 
-			if (icon.empty())
-				continue;
+                        if ((mTypes & FileTypes::MANUALS) == FileTypes::MANUALS)
+                                if (ext == ".pdf" || ext == ".cbz")
+                                        icon = DOCUMENT_ICON;
 
-			bool isSelected = (mSelectedFile == file.path);
+                        if ((mTypes & FileTypes::VIDEO) == FileTypes::VIDEO)
+                                if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm")
+                                        icon = VIDEO_ICON;
 
-			mMenu.addEntry(icon + Utils::FileSystem::getFileName(file.path), false, 
-				[this, file]() { onOk(file.path); }, 
-				"", isSelected, false, file.path, false);
-		}
-	}
+                        if ((mTypes & FileTypes::AUDIO) == FileTypes::AUDIO)
+                                if (ext == ".ogg" || ext == ".mp3" || ext == ".wav")
+                                        icon = AUDIO_ICON;
 
-	centerWindow();	
+                        if (icon.empty())
+                                continue;
+
+                        bool isSelected = (mSelectedFile == file.path);
+
+                        mMenu.addEntry(icon + Utils::FileSystem::getFileName(file.path), false,
+                                [this, file]() { onOk(file.path); },
+                                "", isSelected, false, file.path, false);
+                }
+        }
+
+        centerWindow();
+
+        auto cb = mMenu.getList()->getCursorChangedCallback();
+        if (cb)
+                cb(CursorState::CURSOR_STOPPED);
 }
 
 void GuiFileBrowser::centerWindow()
 {
-	if (Renderer::ScreenSettings::fullScreenMenus())
-		mMenu.setSize(Renderer::getScreenWidth(), Renderer::getScreenHeight());
-	else
-	{
-		mMenu.setSize(mMenu.getSize().x(), Renderer::getScreenHeight() * 0.875f);
-		mMenu.setPosition((Renderer::getScreenWidth() - mMenu.getSize().x()) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
-	}
+        if (Renderer::ScreenSettings::fullScreenMenus())
+                mMenu.setSize(Renderer::getScreenWidth(), Renderer::getScreenHeight());
+        else
+        {
+                mMenu.setSize(mMenu.getSize().x(), Renderer::getScreenHeight() * 0.875f);
+                mMenu.setPosition((Renderer::getScreenWidth() - mMenu.getSize().x()) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
+        }
+
+        if (mPreview)
+        {
+                float margin = Renderer::getScreenWidth() * 0.02f;
+                float x = mMenu.getPosition().x() + mMenu.getSize().x() + margin;
+                float y = mMenu.getPosition().y();
+                float width = Renderer::getScreenWidth() - x - margin;
+                float height = mMenu.getSize().y();
+                mPreview->setPosition(x, y);
+                mPreview->setMaxSize(width, height);
+        }
+}
+
+void GuiFileBrowser::update(int deltaTime)
+{
+        GuiComponent::update(deltaTime);
+        if (mPreview)
+                mPreview->update(deltaTime);
 }
 
 bool GuiFileBrowser::input(InputConfig* config, Input input)
@@ -174,11 +243,12 @@ bool GuiFileBrowser::input(InputConfig* config, Input input)
 		return true;
 	}
 
-	if (input.value != 0 && config->isMappedTo(BUTTON_BACK, input))
-	{
-		delete this;
-		return true;
-	}
+        if (input.value != 0 && config->isMappedTo(BUTTON_BACK, input))
+        {
+                mPreview->setVideo("");
+                delete this;
+                return true;
+        }
 
 	if (config->isMappedTo("start", input) && input.value != 0)
 	{		
@@ -195,16 +265,16 @@ bool GuiFileBrowser::input(InputConfig* config, Input input)
 		return true;		
 	}
 
-	if (config->isMappedTo("x", input) && input.value && mOkCallback != nullptr)
-	{
-		onOk("");		
-		return true;
-	}
-	
-	if (config->isMappedTo("select", input))
-	{
-		navigateTo(Paths::getScreenShotPath());
-		return true;
+        if (config->isMappedTo("x", input) && input.value && mOkCallback != nullptr)
+        {
+                onOk("");
+                return true;
+        }
+
+        if (config->isMappedTo("select", input))
+        {
+                navigateTo(Paths::getScreenShotPath());
+                return true;
 	}
 
 	return false;
@@ -230,8 +300,9 @@ void GuiFileBrowser::onOk(const std::string& path)
 	if (Utils::FileSystem::isDirectory(mCurrentPath) && Settings::getInstance()->setString("LastFileBrowserFolder", mCurrentPath))
 		Settings::getInstance()->saveFile();
 
-	if (mOkCallback)
-		mOkCallback(path);
+        if (mOkCallback)
+                mOkCallback(path);
 
-	delete this;
+        mPreview->setVideo("");
+        delete this;
 }
