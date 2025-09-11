@@ -1,6 +1,6 @@
 #include "guis/GuiFileBrowser.h"
-
 #include "ApiSystem.h"
+#include "components/VideoComponent.h"
 #include "components/OptionListComponent.h"
 #include "guis/GuiSettings.h"
 #include "views/ViewController.h"
@@ -34,14 +34,42 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 	mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
 	mOkCallback = okCallback;
 
-	addChild(&mMenu);
+        addChild(&mMenu);
 
-	if (mOkCallback != nullptr)
-	{
-		mMenu.addButton(_("RESET"), "back", [&]
-		{
-			onOk("");			
-		});
+        mPreview = std::make_shared<VideoComponent>(mWindow);
+        mPreview->setVisible(false);
+        addChild(mPreview.get());
+
+        mMenu.getList()->setCursorChangedCallback([this](CursorState /*state*/)
+        {
+                if (!mPreview)
+                        return;
+
+                std::string path = mMenu.getSelected();
+
+                if (!path.empty() && !Utils::FileSystem::isDirectory(path))
+                {
+                        std::string ext = Utils::FileSystem::getExtension(path);
+                        if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm")
+                                mPreview->setVideo(path);
+                        else
+                                mPreview->setImage(path);
+
+                        mPreview->setVisible(true);
+                }
+                else
+                {
+                        mPreview->setVideo("");
+                        mPreview->setVisible(false);
+                }
+        });
+
+        if (mOkCallback != nullptr)
+        {
+                mMenu.addButton(_("RESET"), "back", [&]
+                {
+                        onOk("");
+                });
 	}
 
     mMenu.addButton(_("BACK"), "back", [&] { delete this; });
@@ -60,12 +88,18 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 
 void GuiFileBrowser::navigateTo(const std::string path)
 {
-	mCurrentPath = path;
+        mCurrentPath = path;
 
-	auto theme = ThemeData::getMenuTheme();
+        if (mPreview)
+        {
+                mPreview->setVideo("");
+                mPreview->setVisible(false);
+        }
 
-	mMenu.clear();
-	mMenu.setSubTitle(mCurrentPath);
+        auto theme = ThemeData::getMenuTheme();
+
+        mMenu.clear();
+        mMenu.setSubTitle(mCurrentPath);
 
 	auto files = Utils::FileSystem::getDirectoryFiles(mCurrentPath);
 
