@@ -65,7 +65,11 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 		});
 	}
 
-    mMenu.addButton(_("BACK"), "back", [&] { delete this; });
+        mMenu.addButton(_("BACK"), "back", [this]
+        {
+                mMenu.getList()->setCursorChangedCallback(nullptr);
+                delete this;
+        });
 
         if (startPath.empty() || !Utils::FileSystem::isDirectory(startPath))
         {
@@ -80,6 +84,12 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 
         if (mPreview && mMenu.getList()->getCursorChangedCallback())
                 mMenu.getList()->getCursorChangedCallback()(CURSOR_STOPPED);
+}
+
+GuiFileBrowser::~GuiFileBrowser()
+{
+        mMenu.getList()->setCursorChangedCallback(nullptr);
+        mPreview.reset();
 }
 
 void GuiFileBrowser::navigateTo(const std::string path)
@@ -220,11 +230,12 @@ bool GuiFileBrowser::input(InputConfig* config, Input input)
 		return true;
 	}
 
-	if (input.value != 0 && config->isMappedTo(BUTTON_BACK, input))
-	{
-		delete this;
-		return true;
-	}
+        if (input.value != 0 && config->isMappedTo(BUTTON_BACK, input))
+        {
+                mMenu.getList()->setCursorChangedCallback(nullptr);
+                delete this;
+                return true;
+        }
 
 	if (config->isMappedTo("start", input) && input.value != 0)
 	{		
@@ -276,8 +287,9 @@ void GuiFileBrowser::onOk(const std::string& path)
 	if (Utils::FileSystem::isDirectory(mCurrentPath) && Settings::getInstance()->setString("LastFileBrowserFolder", mCurrentPath))
 		Settings::getInstance()->saveFile();
 
-	if (mOkCallback)
-		mOkCallback(path);
+        if (mOkCallback)
+                mOkCallback(path);
 
-	delete this;
+        mMenu.getList()->setCursorChangedCallback(nullptr);
+        delete this;
 }
