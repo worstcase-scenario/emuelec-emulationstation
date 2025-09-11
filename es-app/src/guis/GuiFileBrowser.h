@@ -4,6 +4,8 @@
 #include "components/MenuComponent.h"
 #include "ApiSystem.h"
 
+class ImageComponent;
+
 template<typename T>
 class OptionListComponent;
 
@@ -20,15 +22,17 @@ public:
 		ALL = 255
 	};
 
-	GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types = FileTypes::IMAGES, const std::function<void(const std::string&)>& okCallback = nullptr, const std::string& title = "");
+        GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types = FileTypes::IMAGES, const std::function<void(const std::string&)>& okCallback = nullptr, const std::string& title = "");
+        ~GuiFileBrowser();
 
 	bool input(InputConfig* config, Input input) override;
-	virtual std::vector<HelpPrompt> getHelpPrompts() override;
+        virtual std::vector<HelpPrompt> getHelpPrompts() override;
 
 private:
 	void onOk(const std::string& path);
 	void navigateTo(const std::string path);
-	void centerWindow();
+        void centerWindow();
+        void updatePreview();
 
 	MenuComponent mMenu;	
 
@@ -36,5 +40,6 @@ private:
 	std::string mSelectedFile;
 	FileTypes   mTypes;
 
-	std::function<void(const std::string&)> mOkCallback;
+        std::function<void(const std::string&)> mOkCallback;
+        ImageComponent* mPreview;
 };

@@ -1,6 +1,7 @@
 #include "guis/GuiFileBrowser.h"
 
 #include "ApiSystem.h"
+#include "components/ImageComponent.h"
 #include "components/OptionListComponent.h"
 #include "guis/GuiSettings.h"
 #include "views/ViewController.h"
@@ -13,6 +14,7 @@
 #include <cstring>
 #include "SystemConf.h"
 #include "Paths.h"
+#include "resources/ResourceManager.h"
 
 #define WINDOW_WIDTH (float)Math::max((int)Renderer::getScreenHeight(), (int)(Renderer::getScreenWidth() * 0.65f))
 
@@ -28,21 +30,26 @@
 GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types, const std::function<void(const std::string&)>& okCallback, const std::string& title)
 	: GuiComponent(window), mMenu(window, title.empty() ? _("FILE BROWSER") : title)
 {
-	setTag("popup");
+        setTag("popup");
 
-	mTypes = types;
-	mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
-	mOkCallback = okCallback;
+        mPreview = new ImageComponent(window);
+        mPreview->setIsLinear(true);
+        mMenu.addChild(mPreview);
+        mMenu.getList()->setCursorChangedCallback([this](const CursorState& /*state*/) { updatePreview(); });
 
-	addChild(&mMenu);
+        mTypes = types;
+        mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
+        mOkCallback = okCallback;
 
-	if (mOkCallback != nullptr)
-	{
-		mMenu.addButton(_("RESET"), "back", [&]
-		{
-			onOk("");			
-		});
-	}
+        addChild(&mMenu);
+
+        if (mOkCallback != nullptr)
+        {
+                mMenu.addButton(_("RESET"), "back", [&]
+                {
+                        onOk("");
+                });
+        }
 
     mMenu.addButton(_("BACK"), "back", [&] { delete this; });
 
@@ -55,12 +62,23 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 		navigateTo(mCurrentPath);
 	}
 	else
-		navigateTo(startPath);
+                navigateTo(startPath);
+}
+
+GuiFileBrowser::~GuiFileBrowser()
+{
+        if (mPreview != nullptr)
+        {
+                mMenu.removeChild(mPreview);
+                ResourceManager::getInstance()->removeReloadable(mPreview->getTexture());
+                delete mPreview;
+                mPreview = nullptr;
+        }
 }
 
 void GuiFileBrowser::navigateTo(const std::string path)
 {
-	mCurrentPath = path;
+        mCurrentPath = path;
 
 	auto theme = ThemeData::getMenuTheme();
 
@@ -141,18 +159,52 @@ void GuiFileBrowser::navigateTo(const std::string path)
 		}
 	}
 
-	centerWindow();	
+        centerWindow();
+        updatePreview();
 }
 
 void GuiFileBrowser::centerWindow()
 {
-	if (Renderer::ScreenSettings::fullScreenMenus())
-		mMenu.setSize(Renderer::getScreenWidth(), Renderer::getScreenHeight());
-	else
-	{
-		mMenu.setSize(mMenu.getSize().x(), Renderer::getScreenHeight() * 0.875f);
-		mMenu.setPosition((Renderer::getScreenWidth() - mMenu.getSize().x()) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
-	}
+        if (Renderer::ScreenSettings::fullScreenMenus())
+                mMenu.setSize(Renderer::getScreenWidth(), Renderer::getScreenHeight());
+        else
+        {
+                mMenu.setSize(mMenu.getSize().x(), Renderer::getScreenHeight() * 0.875f);
+                mMenu.setPosition((Renderer::getScreenWidth() - mMenu.getSize().x()) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
+        }
+
+        if (mPreview != nullptr)
+        {
+                float previewWidth = mMenu.getSize().x() * 0.4f;
+                float previewHeight = mMenu.getSize().y() * 0.4f;
+                mPreview->setMaxSize(previewWidth, previewHeight);
+                mPreview->setPosition(mMenu.getSize().x() - previewWidth - 20.0f, mMenu.getSize().y() - previewHeight - 20.0f);
+        }
+}
+
+void GuiFileBrowser::updatePreview()
+{
+        if (mPreview == nullptr)
+                return;
+
+        if ((mTypes & FileTypes::IMAGES) != FileTypes::IMAGES)
+        {
+                mPreview->setImage("");
+                return;
+        }
+
+        auto path = mMenu.getSelected();
+        if (path.empty() || Utils::FileSystem::isDirectory(path))
+        {
+                mPreview->setImage("");
+                return;
+        }
+
+        std::string ext = Utils::FileSystem::getExtension(path);
+        if (ext == ".jpg" || ext == ".png" || ext == ".gif" || ext == ".svg")
+                mPreview->setImage(path);
+        else
+                mPreview->setImage("");
 }
 
 bool GuiFileBrowser::input(InputConfig* config, Input input)
@@ -233,5 +285,5 @@ void GuiFileBrowser::onOk(const std::string& path)
 	if (mOkCallback)
 		mOkCallback(path);
 
-	delete this;
+        delete this;
 }
