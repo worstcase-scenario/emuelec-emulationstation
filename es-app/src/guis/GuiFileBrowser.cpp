@@ -39,24 +39,31 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
         addChild(&mMenu);
 
         mPreview = std::make_shared<ImageComponent>(window);
-        mPreview->setVisible(false);
-        addChild(mPreview.get());
+       mPreview->setVisible(false);
+       addChild(mPreview.get());
 
-                mMenu.getList()->setCursorChangedCallback([this](CursorState state)
-        {
-                std::string path = mMenu.getSelected();
-                std::string ext = Utils::String::toLower(Utils::FileSystem::getExtension(path));
-                if (ext == ".jpg" || ext == ".png" || ext == ".gif" || ext == ".svg")
-                {
-                        mPreview->setImage(path);
-                        mPreview->setVisible(true);
-                }
-                else
-                {
-                        mPreview->setImage("");
-                        mPreview->setVisible(false);
-                }
-        });
+       mMenu.getList()->setCursorChangedCallback([this](CursorState state)
+       {
+               if (mMenu.size() == 0)
+               {
+                       mPreview->setImage("");
+                       mPreview->setVisible(false);
+                       return;
+               }
+
+               std::string path = mMenu.getSelected();
+               std::string ext = Utils::String::toLower(Utils::FileSystem::getExtension(path));
+               if (ext == ".jpg" || ext == ".png" || ext == ".gif" || ext == ".svg")
+               {
+                       mPreview->setImage(path);
+                       mPreview->setVisible(true);
+               }
+               else
+               {
+                       mPreview->setImage("");
+                       mPreview->setVisible(false);
+               }
+       });
 
 	if (mOkCallback != nullptr)
 	{
