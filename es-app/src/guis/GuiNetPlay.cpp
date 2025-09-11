@@ -2,7 +2,6 @@
 #include "Window.h"
 #include <string>
 #include <fcntl.h>
-#include <future>
 #include "Log.h"
 #include "Settings.h"
 #include "SystemConf.h"
@@ -495,9 +494,6 @@ FileData* GuiNetPlay::getFileData(std::string gameInfo, bool crc, std::string co
 		lowCore = Utils::String::toLower(Utils::String::replace(coreName, " ", "_"));
 	
 	std::string normalizedName = normalizeName(gameInfo);
-	std::string normalizedNameNoSpace = Utils::String::replace(normalizedName, " ", "");
-
-	std::vector<std::future<FileData*>> futures;
 	for (auto sys : SystemData::sSystemVector)
 	{
 		if (!sys->isNetplaySupported())
@@ -510,49 +506,36 @@ FileData* GuiNetPlay::getFileData(std::string gameInfo, bool crc, std::string co
 			for (auto& emul : sys->getEmulators())
 				for (auto& core : emul.cores)
 					if (Utils::String::toLower(core.name) == lowCore)
-					{
 						coreExists = true;
-						break;
-					}
 
 			if (!coreExists)
 				continue;
 		}
 
-		futures.push_back(std::async(std::launch::async, [sys, crc, gameInfo, normalizedName, normalizedNameNoSpace, &normalizeName]() -> FileData* {
-			for (auto file : sys->getRootFolder()->getFilesRecursive(GAME, false, sys))
+		for (auto file : sys->getRootFolder()->getFilesRecursive(GAME))
+		{
+			if (crc)
 			{
-				if (crc)
-				{
-					if (file->getMetadata(MetaDataId::Crc32) == gameInfo)
-						return file;
+				if (file->getMetadata(MetaDataId::Crc32) == gameInfo)
+					return file;
 
-					continue;
-				}
-				else
-				{
-					std::string stem = normalizeName(file->getName());
-					if (stem == normalizedName)
-						return file;
-
-					stem = normalizeName(Utils::FileSystem::getStem(file->getPath()));
-					if (stem == normalizedName)
-						return file;
-
-					stem = Utils::String::replace(normalizeName(file->getName()), " ", "");
-					if (stem == Utils::String::replace(normalizedName, " ", ""))
-						return file;
-				}
+				continue;
 			}
-			return nullptr;
-		}));
-	}
+			else
+			{
+				std::string stem = normalizeName(file->getName());
+				if (stem == normalizedName)
+					return file;
 
-	for (auto& fut : futures)
-	{
-		FileData* file = fut.get();
-		if (file != nullptr)
-			return file;
+				stem = normalizeName(Utils::FileSystem::getStem(file->getPath()));
+				if (stem == normalizedName)
+					return file;
+
+				stem = Utils::String::replace(normalizeName(file->getName()), " ", "");
+				if (stem == Utils::String::replace(normalizedName, " ", ""))
+					return file;
+			}
+		}
 	}
 
 	return nullptr;
