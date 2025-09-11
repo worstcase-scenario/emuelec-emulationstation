@@ -14,6 +14,10 @@
 #include "SystemConf.h"
 #include "Paths.h"
 
+#ifdef _RPI_
+#include "Settings.h"
+#endif
+
 #define WINDOW_WIDTH (float)Math::max((int)Renderer::getScreenHeight(), (int)(Renderer::getScreenWidth() * 0.65f))
 
 #define DRIVE_ICON		_U("\uF0A0 ")
@@ -31,10 +35,21 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 	setTag("popup");
 
 	mTypes = types;
-	mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
-	mOkCallback = okCallback;
+        mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
+        mOkCallback = okCallback;
 
-	addChild(&mMenu);
+#ifdef _RPI_
+        if (Settings::getInstance()->getBool("VideoOmxPlayer"))
+                mPreviewVideo = new VideoPlayerComponent(mWindow, "");
+        else
+#endif
+                mPreviewVideo = new VideoVlcComponent(mWindow);
+
+        mPreviewVideo->setVisible(false);
+        mPreviewVideo->setMaxSize(Renderer::getScreenWidth() * 0.35f, Renderer::getScreenHeight() * 0.5f);
+        addChild(mPreviewVideo);
+
+        addChild(&mMenu);
 
 	if (mOkCallback != nullptr)
 	{
@@ -55,7 +70,12 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 		navigateTo(mCurrentPath);
 	}
 	else
-		navigateTo(startPath);
+                navigateTo(startPath);
+}
+
+GuiFileBrowser::~GuiFileBrowser()
+{
+        delete mPreviewVideo;
 }
 
 void GuiFileBrowser::navigateTo(const std::string path)
@@ -141,18 +161,55 @@ void GuiFileBrowser::navigateTo(const std::string path)
 		}
 	}
 
-	centerWindow();	
+        mMenu.getList()->setCursorChangedCallback([this](const CursorState& /*state*/) { updatePreview(); });
+
+        centerWindow();
+        updatePreview();
 }
 
 void GuiFileBrowser::centerWindow()
 {
-	if (Renderer::ScreenSettings::fullScreenMenus())
-		mMenu.setSize(Renderer::getScreenWidth(), Renderer::getScreenHeight());
-	else
-	{
-		mMenu.setSize(mMenu.getSize().x(), Renderer::getScreenHeight() * 0.875f);
-		mMenu.setPosition((Renderer::getScreenWidth() - mMenu.getSize().x()) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
-	}
+        if (Renderer::ScreenSettings::fullScreenMenus())
+                mMenu.setSize(Renderer::getScreenWidth(), Renderer::getScreenHeight());
+        else
+        {
+                mMenu.setSize(mMenu.getSize().x(), Renderer::getScreenHeight() * 0.875f);
+                mMenu.setPosition((Renderer::getScreenWidth() - mMenu.getSize().x()) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
+        }
+
+        if (mPreviewVideo != nullptr)
+        {
+                float menuRight = mMenu.getPosition().x() + mMenu.getSize().x() + 20.0f;
+                mPreviewVideo->setPosition(menuRight, mMenu.getPosition().y());
+                mPreviewVideo->setMaxSize(Renderer::getScreenWidth() - menuRight - 20.0f, mMenu.getSize().y());
+        }
+}
+
+void GuiFileBrowser::updatePreview()
+{
+        if (mPreviewVideo == nullptr)
+                return;
+
+        std::string path = mMenu.getSelected();
+
+        if (path.empty() || Utils::FileSystem::isDirectory(path))
+        {
+                mPreviewVideo->setVideo("");
+                mPreviewVideo->setVisible(false);
+                return;
+        }
+
+        std::string ext = Utils::String::toLower(Utils::FileSystem::getExtension(path));
+        if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm")
+        {
+                mPreviewVideo->setVideo(path);
+                mPreviewVideo->setVisible(true);
+        }
+        else
+        {
+                mPreviewVideo->setVideo("");
+                mPreviewVideo->setVisible(false);
+        }
 }
 
 bool GuiFileBrowser::input(InputConfig* config, Input input)
