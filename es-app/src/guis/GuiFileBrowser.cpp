@@ -3,6 +3,7 @@
 #include "ApiSystem.h"
 #include "components/OptionListComponent.h"
 #include "components/ImageComponent.h"
+#include "components/VideoVlcComponent.h"
 #include "utils/StringUtil.h"
 #include "guis/GuiSettings.h"
 #include "views/ViewController.h"
@@ -28,7 +29,7 @@
 
 
 GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types, const std::function<void(const std::string&)>& okCallback, const std::string& title)
-	: GuiComponent(window), mMenu(window, title.empty() ? _("FILE BROWSER") : title)
+        : GuiComponent(window), mMenu(window, title.empty() ? _("FILE BROWSER") : title)
 {
 	setTag("popup");
 
@@ -42,12 +43,20 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
        mPreview->setVisible(false);
        addChild(mPreview.get());
 
+       mVideoPreview = std::shared_ptr<VideoComponent>(new VideoVlcComponent(window));
+       mVideoPreview->setVisible(false);
+       addChild(mVideoPreview.get());
+
        mMenu.getList()->setCursorChangedCallback([this](CursorState state)
        {
                if (mMenu.size() == 0)
                {
                        mPreview->setImage("");
                        mPreview->setVisible(false);
+
+                       mVideoPreview->onHide();
+                       mVideoPreview->setVideo("");
+                       mVideoPreview->setVisible(false);
                        return;
                }
 
@@ -57,11 +66,28 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
                {
                        mPreview->setImage(path);
                        mPreview->setVisible(true);
+
+                       mVideoPreview->onHide();
+                       mVideoPreview->setVideo("");
+                       mVideoPreview->setVisible(false);
+               }
+               else if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm")
+               {
+                       mPreview->setImage("");
+                       mPreview->setVisible(false);
+
+                       mVideoPreview->setVideo(path);
+                       mVideoPreview->setVisible(true);
+                       mVideoPreview->onShow();
                }
                else
                {
                        mPreview->setImage("");
                        mPreview->setVisible(false);
+
+                       mVideoPreview->onHide();
+                       mVideoPreview->setVideo("");
+                       mVideoPreview->setVisible(false);
                }
        });
 
@@ -87,14 +113,24 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 		navigateTo(startPath);
 }
 
+GuiFileBrowser::~GuiFileBrowser()
+{
+        mVideoPreview->onHide();
+        mVideoPreview->setVideo("");
+}
+
 void GuiFileBrowser::navigateTo(const std::string path)
 {
-	mCurrentPath = path;
+        mVideoPreview->onHide();
+        mVideoPreview->setVideo("");
+        mVideoPreview->setVisible(false);
 
-	auto theme = ThemeData::getMenuTheme();
+        mCurrentPath = path;
 
-	mMenu.clear();
-	mMenu.setSubTitle(mCurrentPath);
+        auto theme = ThemeData::getMenuTheme();
+
+        mMenu.clear();
+        mMenu.setSubTitle(mCurrentPath);
 
 	auto files = Utils::FileSystem::getDirectoryFiles(mCurrentPath);
 
@@ -194,6 +230,9 @@ void GuiFileBrowser::centerWindow()
 
         mPreview->setPosition(mMenu.getPosition().x() + mMenu.getSize().x(), mMenu.getPosition().y());
         mPreview->setMaxSize(previewWidth, mMenu.getSize().y());
+
+        mVideoPreview->setPosition(mMenu.getPosition().x() + mMenu.getSize().x(), mMenu.getPosition().y());
+        mVideoPreview->setMaxSize(previewWidth, mMenu.getSize().y());
 }
 
 bool GuiFileBrowser::input(InputConfig* config, Input input)
@@ -268,8 +307,12 @@ std::vector<HelpPrompt> GuiFileBrowser::getHelpPrompts()
 
 void GuiFileBrowser::onOk(const std::string& path)
 {
-	if (Utils::FileSystem::isDirectory(mCurrentPath) && Settings::getInstance()->setString("LastFileBrowserFolder", mCurrentPath))
-		Settings::getInstance()->saveFile();
+        mVideoPreview->onHide();
+        mVideoPreview->setVideo("");
+        mVideoPreview->setVisible(false);
+
+        if (Utils::FileSystem::isDirectory(mCurrentPath) && Settings::getInstance()->setString("LastFileBrowserFolder", mCurrentPath))
+                Settings::getInstance()->saveFile();
 
 	if (mOkCallback)
 		mOkCallback(path);

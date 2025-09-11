@@ -3,6 +3,7 @@
 #include "GuiComponent.h"
 #include "components/MenuComponent.h"
 #include "ApiSystem.h"
+#include "components/VideoComponent.h"
 
 template<typename T>
 class OptionListComponent;
@@ -22,10 +23,11 @@ public:
 		ALL = 255
 	};
 
-	GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types = FileTypes::IMAGES, const std::function<void(const std::string&)>& okCallback = nullptr, const std::string& title = "");
+        GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types = FileTypes::IMAGES, const std::function<void(const std::string&)>& okCallback = nullptr, const std::string& title = "");
+        ~GuiFileBrowser();
 
-	bool input(InputConfig* config, Input input) override;
-	virtual std::vector<HelpPrompt> getHelpPrompts() override;
+        bool input(InputConfig* config, Input input) override;
+        virtual std::vector<HelpPrompt> getHelpPrompts() override;
 
 private:
         void onOk(const std::string& path);
@@ -38,6 +40,7 @@ private:
         std::string mSelectedFile;
         FileTypes   mTypes;
         std::shared_ptr<ImageComponent> mPreview;
+        std::shared_ptr<VideoComponent> mVideoPreview;
 
         std::function<void(const std::string&)> mOkCallback;
 };
