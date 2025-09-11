@@ -7,6 +7,8 @@
 template<typename T>
 class OptionListComponent;
 
+class ImageComponent;
+
 class GuiFileBrowser : public GuiComponent
 {
 public:
@@ -26,15 +28,16 @@ public:
 	virtual std::vector<HelpPrompt> getHelpPrompts() override;
 
 private:
-	void onOk(const std::string& path);
-	void navigateTo(const std::string path);
-	void centerWindow();
+        void onOk(const std::string& path);
+        void navigateTo(const std::string path);
+        void centerWindow();
 
-	MenuComponent mMenu;	
+        MenuComponent mMenu;
 
-	std::string mCurrentPath;
-	std::string mSelectedFile;
-	FileTypes   mTypes;
+        std::string mCurrentPath;
+        std::string mSelectedFile;
+        FileTypes   mTypes;
+        std::shared_ptr<ImageComponent> mPreview;
 
-	std::function<void(const std::string&)> mOkCallback;
+        std::function<void(const std::string&)> mOkCallback;
 };
