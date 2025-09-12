@@ -1,7 +1,6 @@
 #include "guis/GuiFileBrowser.h"
 #include "ApiSystem.h"
 #include "components/OptionListComponent.h"
-#include "components/ImageComponent.h"
 #ifdef _RPI_
 #include "components/VideoPlayerComponent.h"
 #endif
@@ -41,74 +40,63 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 
 	addChild(&mMenu);
 
-	// Separate components for images and videos
-	mImage = std::shared_ptr<ImageComponent>(new ImageComponent(window));
-	mImage->setVisible(false);
-	addChild(mImage.get());
-
+       // Single preview component capable of showing images or videos
 #ifdef _RPI_
-	if (Settings::getInstance()->getBool("VideoOmxPlayer"))
-	mVideo = std::shared_ptr<VideoComponent>(new VideoPlayerComponent(window, ""));
-	else
+       if (Settings::getInstance()->getBool("VideoOmxPlayer"))
+               mPreview = std::shared_ptr<VideoComponent>(new VideoPlayerComponent(window, ""));
+       else
 #endif
-	mVideo = std::shared_ptr<VideoComponent>(new VideoVlcComponent(window));
+               mPreview = std::shared_ptr<VideoComponent>(new VideoVlcComponent(window));
 
-	mVideo->setPlayAudio(false);
-	mVideo->setStartDelay(0);
-	mVideo->setVisible(false);
-	addChild(mVideo.get());
+       mPreview->setPlayAudio(false);
+       mPreview->setStartDelay(0);
+       mPreview->setVisible(false);
+       mPreview->setSnapshotSource(IMAGE);
+       addChild(mPreview.get());
 
 	mMenu.getList()->setCursorChangedCallback([this](CursorState state)
 	{
-	if (mMenu.size() == 0)
-	{
-		       mImage->setImage("");
-		       mImage->setVisible(false);
-		       mVideo->setVideo("");
-		       mVideo->setVisible(false);
-		       mVideo->onHide();
-		       return;
-	}
+       if (mMenu.size() == 0)
+       {
+               mPreview->setVideo("");
+               mPreview->setImage("");
+               mPreview->setVisible(false);
+               mPreview->onHide();
+               return;
+       }
 
-	std::string path = mMenu.getSelected();
-	std::string ext = Utils::String::toLower(Utils::FileSystem::getExtension(path));
-	if (ext == ".jpg" || ext == ".png" || ext == ".gif" || ext == ".svg")
-	{
-		       mVideo->setVideo("");
-		       mVideo->setVisible(false);
-		       mVideo->onHide();
+       std::string path = mMenu.getSelected();
+       std::string ext = Utils::String::toLower(Utils::FileSystem::getExtension(path));
 
-		       mImage->setImage(path);
-		       mImage->setVisible(true);
-	}
-	else if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm")
-	{
-		       mImage->setImage("");
-		       mImage->setVisible(false);
-
-		       if (!mVideo->setVideo(path))
-		       {
-			       mImage->setImage(path);
-			       mImage->setVisible(true);
-			       mVideo->setVideo("");
-			       mVideo->setVisible(false);
-			       mVideo->onHide();
-		       }
-		       else
-		       {
-			       mVideo->setVisible(true);
-			       mVideo->onShow();
-		       }
-	}
-	else
-	{
-		       mImage->setImage("");
-		       mImage->setVisible(false);
-		       mVideo->setVideo("");
-		       mVideo->setVisible(false);
-		       mVideo->onHide();
-	}
-	});
+       if (ext == ".jpg" || ext == ".png" || ext == ".gif" || ext == ".svg")
+       {
+               mPreview->setVideo("");
+               mPreview->setImage(path);
+               mPreview->setVisible(true);
+       }
+       else if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm")
+       {
+               mPreview->setImage("");
+               if (mPreview->setVideo(path))
+               {
+                       mPreview->setVisible(true);
+                       mPreview->onShow();
+               }
+               else
+               {
+                       mPreview->setVideo("");
+                       mPreview->setImage(path);
+                       mPreview->setVisible(true);
+               }
+       }
+       else
+       {
+               mPreview->setVideo("");
+               mPreview->setImage("");
+               mPreview->setVisible(false);
+               mPreview->onHide();
+       }
+       });
 
 	if (mOkCallback != nullptr)
 	{
@@ -136,12 +124,11 @@ void GuiFileBrowser::navigateTo(const std::string path)
 {
 	mCurrentPath = path;
 
-	// Reset previews when changing directories
-	mImage->setImage("");
-	mImage->setVisible(false);
-	mVideo->setVideo("");
-	mVideo->setVisible(false);
-	mVideo->onHide();
+       // Reset preview when changing directories
+       mPreview->setVideo("");
+       mPreview->setImage("");
+       mPreview->setVisible(false);
+       mPreview->onHide();
 
 	auto theme = ThemeData::getMenuTheme();
 
@@ -244,12 +231,10 @@ void GuiFileBrowser::centerWindow()
 		mMenu.setPosition((Renderer::getScreenWidth() - (menuWidth + previewWidth)) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
 	}
 
-	float previewX = mMenu.getPosition().x() + mMenu.getSize().x();
-	float previewY = mMenu.getPosition().y();
-	mImage->setPosition(previewX, previewY);
-	mImage->setMaxSize(previewWidth, mMenu.getSize().y());
-	mVideo->setPosition(previewX, previewY);
-	mVideo->setMaxSize(previewWidth, mMenu.getSize().y());
+       float previewX = mMenu.getPosition().x() + mMenu.getSize().x();
+       float previewY = mMenu.getPosition().y();
+       mPreview->setPosition(previewX, previewY);
+       mPreview->setMaxSize(previewWidth, mMenu.getSize().y());
 }
 
 bool GuiFileBrowser::input(InputConfig* config, Input input)
