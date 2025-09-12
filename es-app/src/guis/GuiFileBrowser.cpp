@@ -63,9 +63,12 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
                {
                        mImagePreview->setImage("");
                        mImagePreview->setVisible(false);
+                       mImagePreview->onHide();
+
                        mVideoPreview->setVideo("");
                        mVideoPreview->setImage("");
                        mVideoPreview->setVisible(false);
+                       mVideoPreview->onHide();
                        return;
                }
 
@@ -76,26 +79,33 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
                        mVideoPreview->setVideo("");
                        mVideoPreview->setImage("");
                        mVideoPreview->setVisible(false);
+                       mVideoPreview->onHide();
 
                        mImagePreview->setImage(path);
                        mImagePreview->setVisible(true);
+                       mImagePreview->onShow();
                }
                else if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm")
                {
                        mImagePreview->setImage("");
                        mImagePreview->setVisible(false);
+                       mImagePreview->onHide();
 
                        mVideoPreview->setImage("");
                        mVideoPreview->setVideo(path);
                        mVideoPreview->setVisible(true);
+                       mVideoPreview->onShow();
                }
                else
                {
                        mImagePreview->setImage("");
                        mImagePreview->setVisible(false);
+                       mImagePreview->onHide();
+
                        mVideoPreview->setVideo("");
                        mVideoPreview->setImage("");
                        mVideoPreview->setVisible(false);
+                       mVideoPreview->onHide();
                }
         });
 
@@ -128,9 +138,11 @@ void GuiFileBrowser::navigateTo(const std::string path)
        // Reset previews when changing directories
        mImagePreview->setImage("");
        mImagePreview->setVisible(false);
+       mImagePreview->onHide();
        mVideoPreview->setVideo("");
        mVideoPreview->setImage("");
        mVideoPreview->setVisible(false);
+       mVideoPreview->onHide();
 
 	auto theme = ThemeData::getMenuTheme();
 
