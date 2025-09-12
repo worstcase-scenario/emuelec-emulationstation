@@ -7,6 +7,7 @@
 template<typename T>
 class OptionListComponent;
 
+class ImageComponent;
 class VideoComponent;
 
 class GuiFileBrowser : public GuiComponent
@@ -37,7 +38,8 @@ private:
        std::string mCurrentPath;
        std::string mSelectedFile;
        FileTypes   mTypes;
-       std::shared_ptr<VideoComponent> mPreview;
+       std::shared_ptr<ImageComponent> mImage;
+       std::shared_ptr<VideoComponent> mVideo;
 
         std::function<void(const std::string&)> mOkCallback;
 };
