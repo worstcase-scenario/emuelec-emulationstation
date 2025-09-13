@@ -10,6 +10,8 @@
 #include "components/MultiLineMenuEntry.h"
 #include "GuiLoading.h"
 #include "guis/GuiMsgBox.h"
+#include "ThemeData.h"
+#include "utils/FileSystemUtil.h"
 #include "components/VideoVlcComponent.h"
 #include "components/VideoPlayerComponent.h"
 #include "Settings.h"
