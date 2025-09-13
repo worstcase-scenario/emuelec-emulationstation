@@ -47,6 +47,8 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 
        mCurrentFrame = 0;
        mFrameTime = 0;
+       mGeneratingPreview = false;
+       mExpectedFrames = 0;
 
        mMenu.getList()->setCursorChangedCallback([this](CursorState state)
        {
@@ -108,6 +110,28 @@ GuiFileBrowser::~GuiFileBrowser()
 void GuiFileBrowser::update(int deltaTime)
 {
        GuiComponent::update(deltaTime);
+
+       if (mGeneratingPreview)
+       {
+               auto files = Utils::FileSystem::getDirectoryFiles(mTempPreviewDir);
+               files.sort([](const Utils::FileSystem::FileInfo& a, const Utils::FileSystem::FileInfo& b) { return a.path < b.path; });
+
+               mVideoFrames.clear();
+               for (auto file : files)
+               {
+                       if (!file.directory && Utils::String::toLower(Utils::FileSystem::getExtension(file.path)) == ".png")
+                               mVideoFrames.push_back(file.path);
+               }
+
+               if (!mVideoFrames.empty() && !mPreview->isVisible())
+               {
+                       mPreview->setImage(mVideoFrames[0]);
+                       mPreview->setVisible(true);
+               }
+
+               if ((int)mVideoFrames.size() >= mExpectedFrames)
+                       mGeneratingPreview = false;
+       }
 
        if (!mVideoFrames.empty())
        {
@@ -238,32 +262,22 @@ void GuiFileBrowser::generateVideoPreview(const std::string& path)
        Utils::FileSystem::createDirectory(mTempPreviewDir);
 
        std::string command = "ffmpeg -hide_banner -loglevel error -y -i \"" + path + "\" -t 5 -vf fps=10 \"" + mTempPreviewDir + "/frame_%03d.png\"";
-       Utils::Platform::ProcessStartInfo(command).run();
+       Utils::Platform::ProcessStartInfo psi(command);
+       psi.waitForExit = false;
+       psi.run();
 
-       auto files = Utils::FileSystem::getDirectoryFiles(mTempPreviewDir);
-       files.sort([](const Utils::FileSystem::FileInfo& a, const Utils::FileSystem::FileInfo& b) { return a.path < b.path; });
-       for (auto file : files)
-       {
-               if (!file.directory && Utils::String::toLower(Utils::FileSystem::getExtension(file.path)) == ".png")
-                       mVideoFrames.push_back(file.path);
-       }
-
-       if (!mVideoFrames.empty())
-       {
-               mCurrentFrame = 0;
-               mFrameTime = 0;
-               mPreview->setImage(mVideoFrames[0]);
-               mPreview->setVisible(true);
-       }
-       else
-       {
-               Utils::FileSystem::removeDirectory(mTempPreviewDir);
-               mTempPreviewDir.clear();
-       }
+       mGeneratingPreview = true;
+       mExpectedFrames = 50;
+       mCurrentFrame = 0;
+       mFrameTime = 0;
+       mPreview->setImage("");
+       mPreview->setVisible(false);
 }
 
 void GuiFileBrowser::clearVideoPreview()
 {
+       mGeneratingPreview = false;
+
        for (auto& img : mVideoFrames)
                Utils::FileSystem::removeFile(img);
 

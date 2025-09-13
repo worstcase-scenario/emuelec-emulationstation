@@ -47,6 +47,8 @@ private:
         int mCurrentFrame;
         int mFrameTime;
         std::string mTempPreviewDir;
+       bool mGeneratingPreview;
+       int mExpectedFrames;
 
         std::function<void(const std::string&)> mOkCallback;
 };
