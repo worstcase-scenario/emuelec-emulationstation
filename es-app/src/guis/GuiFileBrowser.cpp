@@ -3,6 +3,7 @@
 #include "ApiSystem.h"
 #include "components/OptionListComponent.h"
 #include "components/ImageComponent.h"
+#include "resources/TextureResource.h"
 #include "utils/StringUtil.h"
 #include "guis/GuiSettings.h"
 #include "views/ViewController.h"
@@ -41,8 +42,9 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 
         addChild(&mMenu);
 
-        mPreview = std::make_shared<ImageComponent>(window);
+       mPreview = std::make_shared<ImageComponent>(window);
        mPreview->setVisible(false);
+       mPreview->setAllowFading(false);
        addChild(mPreview.get());
 
        mCurrentFrame = 0;
@@ -116,16 +118,24 @@ void GuiFileBrowser::update(int deltaTime)
                auto files = Utils::FileSystem::getDirectoryFiles(mTempPreviewDir);
                files.sort([](const Utils::FileSystem::FileInfo& a, const Utils::FileSystem::FileInfo& b) { return a.path < b.path; });
 
-               mVideoFrames.clear();
                for (auto file : files)
                {
-                       if (!file.directory && Utils::String::toLower(Utils::FileSystem::getExtension(file.path)) == ".png")
+                       if (file.directory)
+                               continue;
+
+                       if (Utils::String::toLower(Utils::FileSystem::getExtension(file.path)) != ".png")
+                               continue;
+
+                       if (std::find(mVideoFrames.begin(), mVideoFrames.end(), file.path) == mVideoFrames.end())
+                       {
                                mVideoFrames.push_back(file.path);
+                               mFrameTextures.push_back(TextureResource::get(file.path));
+                       }
                }
 
-               if (!mVideoFrames.empty() && !mPreview->isVisible())
+               if (!mFrameTextures.empty() && !mPreview->isVisible())
                {
-                       mPreview->setImage(mVideoFrames[0]);
+                       mPreview->setImage(mFrameTextures[0]);
                        mPreview->setVisible(true);
                }
 
@@ -133,14 +143,14 @@ void GuiFileBrowser::update(int deltaTime)
                        mGeneratingPreview = false;
        }
 
-       if (!mVideoFrames.empty())
+       if (!mFrameTextures.empty())
        {
                mFrameTime += deltaTime;
                if (mFrameTime > 100)
                {
                        mFrameTime = 0;
-                       mCurrentFrame = (mCurrentFrame + 1) % mVideoFrames.size();
-                       mPreview->setImage(mVideoFrames[mCurrentFrame]);
+                       mCurrentFrame = (mCurrentFrame + 1) % mFrameTextures.size();
+                       mPreview->setImage(mFrameTextures[mCurrentFrame]);
                }
        }
 }
@@ -261,13 +271,13 @@ void GuiFileBrowser::generateVideoPreview(const std::string& path)
        mTempPreviewDir = Utils::FileSystem::getTempPath() + "/videopreview";
        Utils::FileSystem::createDirectory(mTempPreviewDir);
 
-       std::string command = "ffmpeg -hide_banner -loglevel error -y -i \"" + path + "\" -t 5 -vf fps=10 \"" + mTempPreviewDir + "/frame_%03d.png\"";
+       std::string command = "ffmpeg -hide_banner -loglevel error -y -i \"" + path + "\" -t 10 -vf fps=10 \"" + mTempPreviewDir + "/frame_%03d.png\"";
        Utils::Platform::ProcessStartInfo psi(command);
        psi.waitForExit = false;
        psi.run();
 
        mGeneratingPreview = true;
-       mExpectedFrames = 50;
+       mExpectedFrames = 100;
        mCurrentFrame = 0;
        mFrameTime = 0;
        mPreview->setImage("");
@@ -285,6 +295,7 @@ void GuiFileBrowser::clearVideoPreview()
                Utils::FileSystem::removeDirectory(mTempPreviewDir);
 
        mVideoFrames.clear();
+       mFrameTextures.clear();
        mTempPreviewDir.clear();
        mCurrentFrame = 0;
        mFrameTime = 0;

@@ -7,21 +7,23 @@
 template<typename T>
 class OptionListComponent;
 
+#include <memory>
 class ImageComponent;
+class TextureResource;
 #include <vector>
 
 class GuiFileBrowser : public GuiComponent
 {
 public:
-	enum FileTypes
-	{
-		IMAGES = 1,
-		MANUALS = 2,
-		VIDEO = 3,
-		DIRECTORY = 4,
-		AUDIO = 5,
-		ALL = 255
-	};
+       enum FileTypes
+       {
+               IMAGES     = 1 << 0,
+               MANUALS    = 1 << 1,
+               VIDEO      = 1 << 2,
+               DIRECTORY  = 1 << 3,
+               AUDIO      = 1 << 4,
+               ALL        = 0xFFFFFFFF
+       };
 
         GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types = FileTypes::IMAGES, const std::function<void(const std::string&)>& okCallback = nullptr, const std::string& title = "");
         ~GuiFileBrowser() override;
@@ -42,8 +44,9 @@ private:
         std::string mCurrentPath;
         std::string mSelectedFile;
         FileTypes   mTypes;
-        std::shared_ptr<ImageComponent> mPreview;
-        std::vector<std::string> mVideoFrames;
+       std::shared_ptr<ImageComponent> mPreview;
+       std::vector<std::string> mVideoFrames;
+       std::vector<std::shared_ptr<TextureResource>> mFrameTextures;
         int mCurrentFrame;
         int mFrameTime;
         std::string mTempPreviewDir;
