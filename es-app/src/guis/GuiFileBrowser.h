@@ -8,6 +8,7 @@ template<typename T>
 class OptionListComponent;
 
 class ImageComponent;
+#include <vector>
 
 class GuiFileBrowser : public GuiComponent
 {
@@ -22,15 +23,19 @@ public:
 		ALL = 255
 	};
 
-	GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types = FileTypes::IMAGES, const std::function<void(const std::string&)>& okCallback = nullptr, const std::string& title = "");
+        GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types = FileTypes::IMAGES, const std::function<void(const std::string&)>& okCallback = nullptr, const std::string& title = "");
+        ~GuiFileBrowser() override;
 
-	bool input(InputConfig* config, Input input) override;
-	virtual std::vector<HelpPrompt> getHelpPrompts() override;
+        bool input(InputConfig* config, Input input) override;
+        void update(int deltaTime) override;
+        virtual std::vector<HelpPrompt> getHelpPrompts() override;
 
 private:
         void onOk(const std::string& path);
         void navigateTo(const std::string path);
         void centerWindow();
+        void generateVideoPreview(const std::string& path);
+        void clearVideoPreview();
 
         MenuComponent mMenu;
 
@@ -38,6 +43,10 @@ private:
         std::string mSelectedFile;
         FileTypes   mTypes;
         std::shared_ptr<ImageComponent> mPreview;
+        std::vector<std::string> mVideoFrames;
+        int mCurrentFrame;
+        int mFrameTime;
+        std::string mTempPreviewDir;
 
         std::function<void(const std::string&)> mOkCallback;
 };

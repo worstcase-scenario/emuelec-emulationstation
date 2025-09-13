@@ -15,6 +15,9 @@
 #include <cstring>
 #include "SystemConf.h"
 #include "Paths.h"
+#include "utils/Platform.h"
+#include "utils/FileSystemUtil.h"
+#include <algorithm>
 
 #define WINDOW_WIDTH (float)Math::max((int)Renderer::getScreenHeight(), (int)(Renderer::getScreenWidth() * 0.65f))
 
@@ -28,7 +31,7 @@
 
 
 GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types, const std::function<void(const std::string&)>& okCallback, const std::string& title)
-	: GuiComponent(window), mMenu(window, title.empty() ? _("FILE BROWSER") : title)
+        : GuiComponent(window), mMenu(window, title.empty() ? _("FILE BROWSER") : title)
 {
 	setTag("popup");
 
@@ -42,12 +45,16 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
        mPreview->setVisible(false);
        addChild(mPreview.get());
 
+       mCurrentFrame = 0;
+       mFrameTime = 0;
+
        mMenu.getList()->setCursorChangedCallback([this](CursorState state)
        {
                if (mMenu.size() == 0)
                {
                        mPreview->setImage("");
                        mPreview->setVisible(false);
+                       clearVideoPreview();
                        return;
                }
 
@@ -55,11 +62,17 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
                std::string ext = Utils::String::toLower(Utils::FileSystem::getExtension(path));
                if (ext == ".jpg" || ext == ".png" || ext == ".gif" || ext == ".svg")
                {
+                       clearVideoPreview();
                        mPreview->setImage(path);
                        mPreview->setVisible(true);
                }
+               else if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm")
+               {
+                       generateVideoPreview(path);
+               }
                else
                {
+                       clearVideoPreview();
                        mPreview->setImage("");
                        mPreview->setVisible(false);
                }
@@ -84,7 +97,28 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 		navigateTo(mCurrentPath);
 	}
 	else
-		navigateTo(startPath);
+               navigateTo(startPath);
+}
+
+GuiFileBrowser::~GuiFileBrowser()
+{
+       clearVideoPreview();
+}
+
+void GuiFileBrowser::update(int deltaTime)
+{
+       GuiComponent::update(deltaTime);
+
+       if (!mVideoFrames.empty())
+       {
+               mFrameTime += deltaTime;
+               if (mFrameTime > 100)
+               {
+                       mFrameTime = 0;
+                       mCurrentFrame = (mCurrentFrame + 1) % mVideoFrames.size();
+                       mPreview->setImage(mVideoFrames[mCurrentFrame]);
+               }
+       }
 }
 
 void GuiFileBrowser::navigateTo(const std::string path)
@@ -193,7 +227,53 @@ void GuiFileBrowser::centerWindow()
         }
 
         mPreview->setPosition(mMenu.getPosition().x() + mMenu.getSize().x(), mMenu.getPosition().y());
-        mPreview->setMaxSize(previewWidth, mMenu.getSize().y());
+       mPreview->setMaxSize(previewWidth, mMenu.getSize().y());
+}
+
+void GuiFileBrowser::generateVideoPreview(const std::string& path)
+{
+       clearVideoPreview();
+
+       mTempPreviewDir = Utils::FileSystem::getTempPath() + "/videopreview";
+       Utils::FileSystem::createDirectory(mTempPreviewDir);
+
+       std::string command = "ffmpeg -hide_banner -loglevel error -y -i \"" + path + "\" -t 5 -vf fps=10 \"" + mTempPreviewDir + "/frame_%03d.png\"";
+       Utils::Platform::ProcessStartInfo(command).run();
+
+       auto files = Utils::FileSystem::getDirectoryFiles(mTempPreviewDir);
+       files.sort([](const Utils::FileSystem::FileInfo& a, const Utils::FileSystem::FileInfo& b) { return a.path < b.path; });
+       for (auto file : files)
+       {
+               if (!file.directory && Utils::String::toLower(Utils::FileSystem::getExtension(file.path)) == ".png")
+                       mVideoFrames.push_back(file.path);
+       }
+
+       if (!mVideoFrames.empty())
+       {
+               mCurrentFrame = 0;
+               mFrameTime = 0;
+               mPreview->setImage(mVideoFrames[0]);
+               mPreview->setVisible(true);
+       }
+       else
+       {
+               Utils::FileSystem::removeDirectory(mTempPreviewDir);
+               mTempPreviewDir.clear();
+       }
+}
+
+void GuiFileBrowser::clearVideoPreview()
+{
+       for (auto& img : mVideoFrames)
+               Utils::FileSystem::removeFile(img);
+
+       if (!mTempPreviewDir.empty())
+               Utils::FileSystem::removeDirectory(mTempPreviewDir);
+
+       mVideoFrames.clear();
+       mTempPreviewDir.clear();
+       mCurrentFrame = 0;
+       mFrameTime = 0;
 }
 
 bool GuiFileBrowser::input(InputConfig* config, Input input)
