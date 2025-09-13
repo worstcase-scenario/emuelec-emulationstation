@@ -142,7 +142,8 @@ void GuiFileBrowser::update(int deltaTime)
                        if (std::find(mVideoFrames.begin(), mVideoFrames.end(), file.path) == mVideoFrames.end())
                        {
                                mVideoFrames.push_back(file.path);
-                               mFrameTextures.push_back(TextureResource::get(file.path));
+                               // Force-load textures so the preview doesn't flicker on first playthrough
+                               mFrameTextures.push_back(TextureResource::get(file.path, false, true, true));
                        }
                }
 
