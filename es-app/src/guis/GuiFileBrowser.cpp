@@ -10,6 +10,9 @@
 #include "components/MultiLineMenuEntry.h"
 #include "GuiLoading.h"
 #include "guis/GuiMsgBox.h"
+#include "components/VideoVlcComponent.h"
+#include "components/VideoPlayerComponent.h"
+#include "Settings.h"
 #include <cstring>
 #include "SystemConf.h"
 #include "Paths.h"
@@ -31,10 +34,20 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 	setTag("popup");
 
 	mTypes = types;
-	mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
-	mOkCallback = okCallback;
+        mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
+        mOkCallback = okCallback;
 
-	addChild(&mMenu);
+        addChild(&mMenu);
+
+#ifdef _RPI_
+        if (Settings::getInstance()->getBool("VideoOmxPlayer"))
+                mPreview = new VideoPlayerComponent(mWindow, "");
+        else
+#endif
+                mPreview = new VideoVlcComponent(mWindow);
+
+        mPreview->setOrigin(0.0f, 0.0f);
+        addChild(mPreview);
 
 	if (mOkCallback != nullptr)
 	{
@@ -54,8 +67,13 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 
 		navigateTo(mCurrentPath);
 	}
-	else
-		navigateTo(startPath);
+        else
+                navigateTo(startPath);
+}
+
+GuiFileBrowser::~GuiFileBrowser()
+{
+        delete mPreview;
 }
 
 void GuiFileBrowser::navigateTo(const std::string path)
@@ -101,10 +119,10 @@ void GuiFileBrowser::navigateTo(const std::string path)
 		}, "", isSelected, false, file.path, false);
 	}
 
-	if (mTypes != FileTypes::DIRECTORY)
-	{
-		for (auto file : files)
-		{
+        if (mTypes != FileTypes::DIRECTORY)
+        {
+                for (auto file : files)
+                {
 			if (file.directory || file.hidden)
 				continue;
 
@@ -138,21 +156,46 @@ void GuiFileBrowser::navigateTo(const std::string path)
 			mMenu.addEntry(icon + Utils::FileSystem::getFileName(file.path), false, 
 				[this, file]() { onOk(file.path); }, 
 				"", isSelected, false, file.path, false);
-		}
-	}
+                }
+        }
 
-	centerWindow();	
+        mMenu.getList()->setCursorChangedCallback([this](CursorState state)
+        {
+                if (state == CURSOR_STOPPED)
+                        updatePreview(mMenu.getSelected());
+        });
+
+        updatePreview(mMenu.getSelected());
+
+        centerWindow();
 }
 
 void GuiFileBrowser::centerWindow()
 {
-	if (Renderer::ScreenSettings::fullScreenMenus())
-		mMenu.setSize(Renderer::getScreenWidth(), Renderer::getScreenHeight());
-	else
-	{
-		mMenu.setSize(mMenu.getSize().x(), Renderer::getScreenHeight() * 0.875f);
-		mMenu.setPosition((Renderer::getScreenWidth() - mMenu.getSize().x()) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
-	}
+        float height = Renderer::ScreenSettings::fullScreenMenus() ? Renderer::getScreenHeight() : Renderer::getScreenHeight() * 0.875f;
+        float menuWidth = Renderer::getScreenWidth() * 0.6f;
+        float previewWidth = Renderer::getScreenWidth() - menuWidth;
+        float y = (Renderer::getScreenHeight() - height) / 2;
+
+        mMenu.setSize(menuWidth, height);
+        mMenu.setPosition(0, y);
+
+        if (mPreview)
+        {
+                mPreview->setSize(previewWidth, height);
+                mPreview->setPosition(menuWidth, y);
+        }
+}
+
+void GuiFileBrowser::updatePreview(const std::string& path)
+{
+        if (!mPreview)
+                return;
+
+        if (Utils::FileSystem::isVideo(path))
+                mPreview->setVideo(path);
+        else
+                mPreview->stopVideo();
 }
 
 bool GuiFileBrowser::input(InputConfig* config, Input input)
