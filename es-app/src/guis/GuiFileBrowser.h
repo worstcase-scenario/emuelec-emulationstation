@@ -47,6 +47,7 @@ private:
        FileTypes   mTypes;
        std::shared_ptr<ImageComponent> mPreview;
        std::shared_ptr<BusyComponent> mLoading;
+       std::shared_ptr<ImageComponent> mLoadingBg;
        std::vector<std::string> mVideoFrames;
        std::vector<std::shared_ptr<TextureResource>> mFrameTextures;
         int mCurrentFrame;
@@ -54,6 +55,8 @@ private:
         std::string mTempPreviewDir;
        bool mGeneratingPreview;
        int mExpectedFrames;
+       int mLastFrameCount;
+       int mNoFrameTime;
 
         std::function<void(const std::string&)> mOkCallback;
 };

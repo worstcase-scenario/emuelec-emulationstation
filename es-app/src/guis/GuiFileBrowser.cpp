@@ -47,6 +47,12 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
        mPreview->setAllowFading(false);
        addChild(mPreview.get());
 
+       mLoadingBg = std::make_shared<ImageComponent>(window);
+       mLoadingBg->setVisible(false);
+       mLoadingBg->setImage(":/white.png");
+       mLoadingBg->setColorShift(0x000000FF);
+       addChild(mLoadingBg.get());
+
        mLoading = std::make_shared<BusyComponent>(window);
        mLoading->setVisible(false);
        mLoading->setBackgroundVisible(false);
@@ -56,6 +62,8 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
        mFrameTime = 0;
        mGeneratingPreview = false;
        mExpectedFrames = 0;
+       mLastFrameCount = 0;
+       mNoFrameTime = 0;
 
        mMenu.getList()->setCursorChangedCallback([this](CursorState state)
        {
@@ -140,6 +148,17 @@ void GuiFileBrowser::update(int deltaTime)
 
                if ((int)mVideoFrames.size() >= mExpectedFrames)
                        mGeneratingPreview = false;
+               else if ((int)mVideoFrames.size() == mLastFrameCount)
+               {
+                       mNoFrameTime += deltaTime;
+                       if (mNoFrameTime > 1000)
+                               mGeneratingPreview = false;
+               }
+               else
+               {
+                       mLastFrameCount = (int)mVideoFrames.size();
+                       mNoFrameTime = 0;
+               }
        }
 
        if (!mGeneratingPreview && !mFrameTextures.empty() && !mPreview->isVisible())
@@ -147,6 +166,7 @@ void GuiFileBrowser::update(int deltaTime)
                mPreview->setImage(mFrameTextures[0]);
                mPreview->setVisible(true);
                mLoading->setVisible(false);
+               mLoadingBg->setVisible(false);
        }
 
        if (mPreview->isVisible() && !mFrameTextures.empty())
@@ -262,12 +282,15 @@ void GuiFileBrowser::centerWindow()
         }
         else
         {
-                mMenu.setSize(menuWidth, Renderer::getScreenHeight() * 0.875f);
-                mMenu.setPosition((Renderer::getScreenWidth() - (menuWidth + previewWidth)) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
-        }
+       mMenu.setSize(menuWidth, Renderer::getScreenHeight() * 0.875f);
+       mMenu.setPosition((Renderer::getScreenWidth() - (menuWidth + previewWidth)) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
+       }
 
        mPreview->setPosition(mMenu.getPosition().x() + mMenu.getSize().x(), mMenu.getPosition().y());
        mPreview->setMaxSize(previewWidth, mMenu.getSize().y());
+
+       mLoadingBg->setPosition(mPreview->getPosition());
+       mLoadingBg->setSize(previewWidth, mMenu.getSize().y());
 
        mLoading->setPosition(mPreview->getPosition());
        mLoading->setSize(previewWidth, mMenu.getSize().y());
@@ -280,17 +303,20 @@ void GuiFileBrowser::generateVideoPreview(const std::string& path)
        mTempPreviewDir = Utils::FileSystem::getTempPath() + "/videopreview";
        Utils::FileSystem::createDirectory(mTempPreviewDir);
 
-       std::string command = "ffmpeg -hide_banner -loglevel error -y -i \"" + path + "\" -t 10 -vf fps=10 \"" + mTempPreviewDir + "/frame_%03d.png\"";
+       std::string command = "ffmpeg -hide_banner -loglevel error -y -i \"" + path + "\" -t 5 -vf fps=10 \"" + mTempPreviewDir + "/frame_%03d.png\"";
        Utils::Platform::ProcessStartInfo psi(command);
        psi.waitForExit = false;
        psi.run();
 
        mGeneratingPreview = true;
-       mExpectedFrames = 100;
+       mExpectedFrames = 50;
+       mLastFrameCount = 0;
+       mNoFrameTime = 0;
        mCurrentFrame = 0;
        mFrameTime = 0;
        mPreview->setImage("");
        mPreview->setVisible(false);
+       mLoadingBg->setVisible(true);
        mLoading->setVisible(true);
 }
 
@@ -315,6 +341,9 @@ void GuiFileBrowser::clearVideoPreview()
        mCurrentFrame = 0;
        mFrameTime = 0;
        mLoading->setVisible(false);
+       mLoadingBg->setVisible(false);
+       mLastFrameCount = 0;
+       mNoFrameTime = 0;
 }
 
 bool GuiFileBrowser::input(InputConfig* config, Input input)
