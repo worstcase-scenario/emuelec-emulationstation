@@ -304,7 +304,9 @@ void GuiFileBrowser::generateVideoPreview(const std::string& path)
        mTempPreviewDir = Utils::FileSystem::getTempPath() + "/videopreview";
        Utils::FileSystem::createDirectory(mTempPreviewDir);
 
-       std::string command = "ffmpeg -hide_banner -loglevel error -y -i \"" + path + "\" -t 5 -vf fps=10 \"" + mTempPreviewDir + "/frame_%03d.png\"";
+       std::string command = "ffmpeg -hide_banner -loglevel error -y -i \"" + path +
+               "\" -t 5 -vf \"fps=10,scale=720:480:force_original_aspect_ratio=decrease\" \"" +
+               mTempPreviewDir + "/frame_%03d.png\"";
        Utils::Platform::ProcessStartInfo psi(command);
        psi.waitForExit = false;
        psi.run();
