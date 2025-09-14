@@ -42,6 +42,7 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 
         addChild(&mMenu);
 
+
        mPreview = std::make_shared<ImageComponent>(window);
        mPreview->setVisible(false);
        mPreview->setAllowFading(false);
@@ -90,6 +91,12 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
                else
                {
                        clearVideoPreview();
+
+                       mPreview->setImage(path);
+                       mPreview->setVisible(true);
+               }
+               else
+               {
                        mPreview->setImage("");
                        mPreview->setVisible(false);
                }
@@ -283,6 +290,7 @@ void GuiFileBrowser::centerWindow()
         }
         else
         {
+
        mMenu.setSize(menuWidth, Renderer::getScreenHeight() * 0.875f);
        mMenu.setPosition((Renderer::getScreenWidth() - (menuWidth + previewWidth)) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
        }
@@ -347,6 +355,14 @@ void GuiFileBrowser::clearVideoPreview()
        mLoadingBg->setVisible(false);
        mLastFrameCount = 0;
        mNoFrameTime = 0;
+
+                mMenu.setSize(menuWidth, Renderer::getScreenHeight() * 0.875f);
+                mMenu.setPosition((Renderer::getScreenWidth() - (menuWidth + previewWidth)) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
+        }
+
+        mPreview->setPosition(mMenu.getPosition().x() + mMenu.getSize().x(), mMenu.getPosition().y());
+        mPreview->setMaxSize(previewWidth, mMenu.getSize().y());
+
 }
 
 bool GuiFileBrowser::input(InputConfig* config, Input input)

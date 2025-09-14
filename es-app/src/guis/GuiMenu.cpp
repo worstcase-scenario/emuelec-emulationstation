@@ -962,6 +962,39 @@ void GuiMenu::createGamepadConfig(Window* window, GuiSettings* systemConfigurati
 {
 	GuiSettings* gamepadConfiguration = new GuiSettings(window, _("GAMEPAD CONFIG"));
 
+	// Wiimote bluetooth connection Script
+
+	gamepadConfiguration->addEntry(_("ACTIVATE WIIMOTE CONNECTION"), false, [window] {
+    // Show an initial message asking the user to put the Wiimote in pairing mode
+    window->pushGui(new GuiMsgBox(window,
+        _("Please ensure your Wiimote is in pairing mode (hold buttons 1+2).\n\nPress OK to start the connection."),
+        _("OK"),
+        [window] {
+            // Start pairing only after the message box has been shown and dismissed
+            int result = system("/usr/bin/connectbtwii.sh");
+
+            if (result == 0)
+                window->pushGui(new GuiMsgBox(window, _("Wiimote successfully connected."), _("OK")));
+            else
+                window->pushGui(new GuiMsgBox(window, _("Error while running connectbtwii.sh."), _("OK")));
+        }));
+});
+
+
+	
+	// Wiimote with IR-Sensorbar
+	gamepadConfiguration->addEntry(_("ACTIVATE WIIMOTE WITH IR-SENSORBAR"), false, [window] {
+    int result = system("/usr/bin/runwiimote.sh &");
+    if(result == 0)
+        window->pushGui(new GuiMsgBox(window, _("Wiimote activated."), _("OK")));
+    else
+        window->pushGui(new GuiMsgBox(window, _("Error while running script."), _("OK")));
+});
+
+
+
+
+
 	// Advmame Gamepad
 	auto enable_advmamegp = std::make_shared<SwitchComponent>(window);
 	bool advgpEnabled = SystemConf::getInstance()->get("advmame_auto_gamepad") == "1";
@@ -4959,8 +4992,15 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 				Utils::Platform::quitES(Utils::Platform::QuitMode::QUIT);
 			}, _("NO"), nullptr));
 		}, "iconControllers");
-
 		
+		s->addEntry(_("START LIBRESPOT"), false, [] {
+            system("systemctl start librespot.service");
+        }, "iconLibrestart");
+		
+		s->addEntry(_("KILL LIBRESPOT"), false, [] {
+            system("systemctl stop librespot.service");
+        }, "iconLibrekill");
+				
 		s->addEntry(_("REBOOT FROM NAND"), false, [window] {
 			window->pushGui(new GuiMsgBox(window, _("REALLY REBOOT FROM NAND?"), _("YES"),
 				[] {
@@ -4972,8 +5012,8 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 			}, _("NO"), nullptr));
 		}, "iconAdvanced");
 	}
-
-	// AUTO SHUTDOWN TIMEOUT
+	
+	// AUTO SHUTDOWN TIMEOUT 
 	auto shutdownSlider = std::make_shared<SliderComponent>(window, 0.0f, 1440.0f, 10.0f, "min");
 
 	int timeout = 0;
@@ -4983,7 +5023,10 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 		timeout = 0;
 	}
 	shutdownSlider->setValue((float)timeout);
-	s->addWithLabel(_("AUTOMATIC SHUTDOWN AFTER INACTIVITY"), shutdownSlider);
+
+	s->addWithLabel(_("AUTOMATIC SHUTDOWN AFTER INACTIVITY"),
+    shutdownSlider, nullptr, "iconAutoShutdown");
+
 
 	s->addSaveFunc([shutdownSlider] {
 		int value = (int)shutdownSlider->getValue();
@@ -4995,8 +5038,8 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 
 	if (quickAccessMenu)
 		s->addGroup(_("QUIT"));
-
-	s->addEntry(_("RESTART SYSTEM"), false, [window] {
+	
+		s->addEntry(_("RESTART SYSTEM"), false, [window] {
 		window->pushGui(new GuiMsgBox(window, _("REALLY RESTART?"), 
 			_("YES"), [] { Utils::Platform::quitES(Utils::Platform::QuitMode::REBOOT); },
 			_("NO"), nullptr));

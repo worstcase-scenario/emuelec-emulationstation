@@ -13,6 +13,7 @@ class TextureResource;
 class BusyComponent;
 #include <vector>
 
+
 class GuiFileBrowser : public GuiComponent
 {
 public:
@@ -60,3 +61,4 @@ private:
 
         std::function<void(const std::string&)> mOkCallback;
 };
+
