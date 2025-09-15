@@ -6,13 +6,13 @@
 
 template<typename T>
 class OptionListComponent;
-
+#ifdef _ENABLEEMUELEC
 #include <memory>
 class ImageComponent;
 class TextureResource;
 class BusyComponent;
 #include <vector>
-
+#endif
 class GuiFileBrowser : public GuiComponent
 {
 public:
@@ -25,26 +25,29 @@ public:
                AUDIO      = 1 << 4,
                ALL        = 0xFFFFFFFF
        };
-
         GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types = FileTypes::IMAGES, const std::function<void(const std::string&)>& okCallback = nullptr, const std::string& title = "");
-        ~GuiFileBrowser() override;
-
+#ifdef _ENABLEEMUELEC        
+		~GuiFileBrowser() override;
+#endif
         bool input(InputConfig* config, Input input) override;
+#ifdef _ENABLEEMUELEC
         void update(int deltaTime) override;
+#endif		
         virtual std::vector<HelpPrompt> getHelpPrompts() override;
 
 private:
         void onOk(const std::string& path);
         void navigateTo(const std::string path);
         void centerWindow();
+#ifdef _ENABLEEMUELEC
         void generateVideoPreview(const std::string& path);
         void clearVideoPreview();
-
+#endif
         MenuComponent mMenu;
-
         std::string mCurrentPath;
         std::string mSelectedFile;
        FileTypes   mTypes;
+#ifdef _ENABLEEMUELEC
        std::shared_ptr<ImageComponent> mPreview;
        std::shared_ptr<BusyComponent> mLoading;
        std::shared_ptr<ImageComponent> mLoadingBg;
@@ -57,6 +60,6 @@ private:
        int mExpectedFrames;
        int mLastFrameCount;
        int mNoFrameTime;
-
+#endif
         std::function<void(const std::string&)> mOkCallback;
 };

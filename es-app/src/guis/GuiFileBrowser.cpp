@@ -2,10 +2,6 @@
 
 #include "ApiSystem.h"
 #include "components/OptionListComponent.h"
-#include "components/ImageComponent.h"
-#include "components/BusyComponent.h"
-#include "resources/TextureResource.h"
-#include "utils/StringUtil.h"
 #include "guis/GuiSettings.h"
 #include "views/ViewController.h"
 #include "components/ComponentGrid.h"
@@ -16,9 +12,15 @@
 #include <cstring>
 #include "SystemConf.h"
 #include "Paths.h"
+#ifdef _ENABLEEMUELEC
+#include "components/ImageComponent.h"
+#include "components/BusyComponent.h"
+#include "resources/TextureResource.h"
+#include "utils/StringUtil.h"
 #include "utils/Platform.h"
 #include "utils/FileSystemUtil.h"
 #include <algorithm>
+#endif
 
 #define WINDOW_WIDTH (float)Math::max((int)Renderer::getScreenHeight(), (int)(Renderer::getScreenWidth() * 0.65f))
 
@@ -32,7 +34,7 @@
 
 
 GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, const std::string selectedFile, FileTypes types, const std::function<void(const std::string&)>& okCallback, const std::string& title)
-        : GuiComponent(window), mMenu(window, title.empty() ? _("FILE BROWSER") : title)
+    : GuiComponent(window), mMenu(window, title.empty() ? _("FILE BROWSER") : title)
 {
 	setTag("popup");
 
@@ -40,31 +42,27 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 	mSelectedFile = Utils::FileSystem::getCanonicalPath(selectedFile);
 	mOkCallback = okCallback;
 
-        addChild(&mMenu);
-
+    addChild(&mMenu);
+#ifdef _ENABLEEMUELEC
        mPreview = std::make_shared<ImageComponent>(window);
        mPreview->setVisible(false);
        mPreview->setAllowFading(false);
        addChild(mPreview.get());
-
        mLoadingBg = std::make_shared<ImageComponent>(window);
        mLoadingBg->setVisible(false);
        mLoadingBg->setImage(":/white.png");
        mLoadingBg->setColorShift(0x000000FF);
        addChild(mLoadingBg.get());
-
        mLoading = std::make_shared<BusyComponent>(window);
        mLoading->setVisible(false);
        mLoading->setBackgroundVisible(false);
        addChild(mLoading.get());
-
        mCurrentFrame = 0;
        mFrameTime = 0;
        mGeneratingPreview = false;
        mExpectedFrames = 0;
        mLastFrameCount = 0;
        mNoFrameTime = 0;
-
        mMenu.getList()->setCursorChangedCallback([this](CursorState state)
        {
                if (mMenu.size() == 0)
@@ -74,7 +72,6 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
                        clearVideoPreview();
                        return;
                }
-
                std::string path = mMenu.getSelected();
                std::string ext = Utils::String::toLower(Utils::FileSystem::getExtension(path));
                if (ext == ".jpg" || ext == ".png" || ext == ".gif" || ext == ".svg")
@@ -94,7 +91,7 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
                        mPreview->setVisible(false);
                }
        });
-
+#endif
 	if (mOkCallback != nullptr)
 	{
 		mMenu.addButton(_("RESET"), "back", [&]
@@ -114,31 +111,26 @@ GuiFileBrowser::GuiFileBrowser(Window* window, const std::string startPath, cons
 		navigateTo(mCurrentPath);
 	}
 	else
-               navigateTo(startPath);
+        navigateTo(startPath);
+#ifdef _ENABLEEMUELEC
 }
-
 GuiFileBrowser::~GuiFileBrowser()
 {
        clearVideoPreview();
 }
-
 void GuiFileBrowser::update(int deltaTime)
 {
        GuiComponent::update(deltaTime);
-
        if (mGeneratingPreview)
        {
                auto files = Utils::FileSystem::getDirectoryFiles(mTempPreviewDir);
                files.sort([](const Utils::FileSystem::FileInfo& a, const Utils::FileSystem::FileInfo& b) { return a.path < b.path; });
-
                for (auto file : files)
                {
                        if (file.directory)
                                continue;
-
                        if (Utils::String::toLower(Utils::FileSystem::getExtension(file.path)) != ".png")
                                continue;
-
                        if (std::find(mVideoFrames.begin(), mVideoFrames.end(), file.path) == mVideoFrames.end())
                        {
                                mVideoFrames.push_back(file.path);
@@ -146,7 +138,6 @@ void GuiFileBrowser::update(int deltaTime)
                                mFrameTextures.push_back(TextureResource::get(file.path, false, true, true));
                        }
                }
-
                if ((int)mVideoFrames.size() >= mExpectedFrames)
                        mGeneratingPreview = false;
                else if ((int)mVideoFrames.size() == mLastFrameCount)
@@ -161,7 +152,6 @@ void GuiFileBrowser::update(int deltaTime)
                        mNoFrameTime = 0;
                }
        }
-
        if (!mGeneratingPreview && !mFrameTextures.empty() && !mPreview->isVisible())
        {
                mPreview->setImage(mFrameTextures[0]);
@@ -169,7 +159,6 @@ void GuiFileBrowser::update(int deltaTime)
                mLoading->setVisible(false);
                mLoadingBg->setVisible(false);
        }
-
        if (mPreview->isVisible() && !mFrameTextures.empty())
        {
                mFrameTime += deltaTime;
@@ -181,7 +170,7 @@ void GuiFileBrowser::update(int deltaTime)
                }
        }
 }
-
+#endif
 void GuiFileBrowser::navigateTo(const std::string path)
 {
 	mCurrentPath = path;
@@ -265,17 +254,18 @@ void GuiFileBrowser::navigateTo(const std::string path)
 		}
 	}
 
-        centerWindow();
-
+    centerWindow();
+#ifdef _ENABLEEMUELEC
         if (mMenu.size() > 0 && mMenu.getList()->getCursorChangedCallback())
                 mMenu.getList()->getCursorChangedCallback()(CURSOR_STOPPED);
+#endif
 }
 
 void GuiFileBrowser::centerWindow()
 {
+#ifdef _ENABLEEMUELEC
         float previewWidth = Renderer::getScreenWidth() * 0.3f;
         float menuWidth = Renderer::getScreenWidth() - previewWidth;
-
         if (Renderer::ScreenSettings::fullScreenMenus())
         {
                 mMenu.setSize(menuWidth, Renderer::getScreenHeight());
@@ -286,31 +276,23 @@ void GuiFileBrowser::centerWindow()
        mMenu.setSize(menuWidth, Renderer::getScreenHeight() * 0.875f);
        mMenu.setPosition((Renderer::getScreenWidth() - (menuWidth + previewWidth)) / 2, (Renderer::getScreenHeight() - mMenu.getSize().y()) / 2);
        }
-
        mPreview->setPosition(mMenu.getPosition().x() + mMenu.getSize().x(), mMenu.getPosition().y());
        mPreview->setMaxSize(previewWidth, mMenu.getSize().y());
-
        mLoadingBg->setPosition(mPreview->getPosition());
        mLoadingBg->setSize(previewWidth, mMenu.getSize().y());
-
        mLoading->setPosition(mPreview->getPosition());
        mLoading->setSize(previewWidth, mMenu.getSize().y());
-}
-
-void GuiFileBrowser::generateVideoPreview(const std::string& path)
+}void GuiFileBrowser::generateVideoPreview(const std::string& path)
 {
        clearVideoPreview();
-
        mTempPreviewDir = Utils::FileSystem::getTempPath() + "/videopreview";
        Utils::FileSystem::createDirectory(mTempPreviewDir);
-
        std::string command = "ffmpeg -hide_banner -loglevel error -y -i \"" + path +
                "\" -t 5 -vf \"fps=10,scale=720:480:force_original_aspect_ratio=decrease\" \"" +
                mTempPreviewDir + "/frame_%03d.png\"";
        Utils::Platform::ProcessStartInfo psi(command);
        psi.waitForExit = false;
        psi.run();
-
        mGeneratingPreview = true;
        mExpectedFrames = 50;
        mLastFrameCount = 0;
@@ -321,23 +303,17 @@ void GuiFileBrowser::generateVideoPreview(const std::string& path)
        mPreview->setVisible(false);
        mLoadingBg->setVisible(true);
        mLoading->setVisible(true);
-}
-
-void GuiFileBrowser::clearVideoPreview()
+}void GuiFileBrowser::clearVideoPreview()
 {
        mGeneratingPreview = false;
-
 #ifndef WIN32
        Utils::Platform::ProcessStartInfo kill("killall -q ffmpeg");
        kill.run();
 #endif
-
        for (auto& img : mVideoFrames)
                Utils::FileSystem::removeFile(img);
-
        if (!mTempPreviewDir.empty())
                Utils::FileSystem::removeDirectory(mTempPreviewDir);
-
        mVideoFrames.clear();
        mFrameTextures.clear();
        mTempPreviewDir.clear();
@@ -348,7 +324,7 @@ void GuiFileBrowser::clearVideoPreview()
        mLastFrameCount = 0;
        mNoFrameTime = 0;
 }
-
+#endif
 bool GuiFileBrowser::input(InputConfig* config, Input input)
 {
 	if (GuiComponent::input(config, input))
