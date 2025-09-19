@@ -5632,8 +5632,15 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 				Utils::Platform::quitES(Utils::Platform::QuitMode::QUIT);
 			}, _("NO"), nullptr));
 		}, "iconControllers");
-
 		
+		s->addEntry(_("START LIBRESPOT"), false, [] {
+            system("systemctl start librespot.service");
+        }, "iconLibrestart");
+		
+		s->addEntry(_("KILL LIBRESPOT"), false, [] {
+            system("systemctl stop librespot.service");
+        }, "iconLibrekill");
+				
 		s->addEntry(_("REBOOT FROM NAND"), false, [window] {
 			window->pushGui(new GuiMsgBox(window, _("REALLY REBOOT FROM NAND?"), _("YES"),
 				[] {
