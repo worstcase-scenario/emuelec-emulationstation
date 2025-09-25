@@ -980,30 +980,25 @@ void GuiMenu::createGamepadConfig(Window* window, GuiSettings* systemConfigurati
 	GuiSettings* gamepadConfiguration = new GuiSettings(window, _("GAMEPAD CONFIG"));
 
 #ifdef _ENABLEEMUELEC
-	// Wiimote bluetooth connection Script
-	gamepadConfiguration->addEntry(_("ACTIVATE WIIMOTE CONNECTION"), false, [window] {
-		// Show an initial message asking the user to put the Wiimote in pairing mode
+	// Wiimote bluetooth connection script
+	gamepadConfiguration->addEntry(_("CONNECT WIIMOTE(S)"), false, [window] {
 		window->pushGui(new GuiMsgBox(window,
-			_("Please ensure your Wiimote is in pairing mode (hold buttons 1+2).\n\nWhen all the LED's are blinking,\npress OK to start the connection.\n\nThis process can take a while, be patient!\n\nIf the LED's stop blinking before the wiimote has been successfully paired, press buttons 1+2 again."),
-			_("OK"),
-			[window] {
-				// Show loading text while scanning and pairing
+			_("Please ensure your Wiimote is in pairing mode (press buttons 1+2).\n\nWhen all the LED's are blinking,\npress OK to start the connection.\n\nThis process can take a while, be patient!\n\nIf the LED's stop blinking before the wiimote has been successfully paired, press buttons 1+2 again."),
+			_("CANCEL"), [](){},
+			_("OK"), [window] {
 				window->pushGui(new GuiLoading<int>(window, _("SCANNING FOR WIIMOTE..."),
 					[window](auto /*gui*/) {
 						int result = system("/usr/bin/connectbtwii.sh");
-
-						// Return to UI and report result
 						window->postToUiThread([window, result]() {
 							if (result == 0)
 								window->pushGui(new GuiMsgBox(window, _("Wiimote successfully connected."), _("OK")));
 							else
-								window->pushGui(new GuiMsgBox(window, _("Connection failed."), _("OK")));
+								window->pushGui(new GuiMsgBox(window, _("Connection failed."),   _("OK")));
 						});
 						return 0;
 					}
 				));
-			},
-			_("CANCEL"), nullptr
+			}
 		));
 	});
 #endif
