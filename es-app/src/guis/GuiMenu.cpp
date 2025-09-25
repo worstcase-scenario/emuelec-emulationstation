@@ -1003,13 +1003,13 @@ void GuiMenu::createGamepadConfig(Window* window, GuiSettings* systemConfigurati
 	});
 	
 	
-	// Wiimote with IR-Sensorbar
+	// Wiimote with IR-Sensorbar, creates a virtual Mouse device in Retroarch for the Wiimote movements
 	gamepadConfiguration->addEntry(_("ACTIVATE WIIMOTE WITH IR-SENSORBAR"), false, [window] {
     int result = system("/usr/bin/runwiimote.sh &");
     if(result == 0)
-        window->pushGui(new GuiMsgBox(window, _("Wiimote IR activated."), _("OK")));
+        window->pushGui(new GuiMsgBox(window, _("Wiimote IR activated.\n\nInstructions:\nSet mouse index in retroarch to Wiimote IR to use the wiimote like a lightgun."), _("OK")));
     else
-        window->pushGui(new GuiMsgBox(window, _("Error while running script."), _("OK")));
+        window->pushGui(new GuiMsgBox(window, _("Error while running script.\n\nWiimote IR not started."), _("OK")));
 });
 
 #endif
