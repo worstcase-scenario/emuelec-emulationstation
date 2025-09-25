@@ -982,29 +982,30 @@ void GuiMenu::createGamepadConfig(Window* window, GuiSettings* systemConfigurati
 #ifdef _ENABLEEMUELEC
 	// Wiimote bluetooth connection Script
 	gamepadConfiguration->addEntry(_("ACTIVATE WIIMOTE CONNECTION"), false, [window] {
-    // Show an initial message asking the user to put the Wiimote in pairing mode
-    window->pushGui(new GuiMsgBox(window,
-        _("Please ensure your Wiimote is in pairing mode (hold buttons 1+2).\n\nPress OK to start the connection."),
-        _("OK"),
-        [window] {
-            // Start pairing only after the message box has been shown and dismissed
-            int result = system("/usr/bin/connectbtwii.sh");
+		// Show an initial message asking the user to put the Wiimote in pairing mode
+		window->pushGui(new GuiMsgBox(window,
+			_("Please ensure your Wiimote is in pairing mode (hold buttons 1+2).\n\nWhen all the LED's are blinking,\npress OK to start the connection.\n\nThis process can take a while, be patient!\n\nIf the LED's stop blinking before the wiimote has been successfully paired, press buttons 1+2 again."),
+			_("OK"),
+			[window] {
+				// Show loading text while scanning and pairing
+				window->pushGui(new GuiLoading<int>(window, _("SCANNING FOR WIIMOTE..."),
+					[window](auto /*gui*/) {
+						int result = system("/usr/bin/connectbtwii.sh");
 
-            if (result == 0)
-                window->pushGui(new GuiMsgBox(window, _("Wiimote successfully connected."), _("OK")));
-            else
-                window->pushGui(new GuiMsgBox(window, _("Error while running connectbtwii.sh."), _("OK")));
-        }));
-});
-
-	// Wiimote with IR-Sensorbar
-	gamepadConfiguration->addEntry(_("ACTIVATE WIIMOTE WITH IR-SENSORBAR"), false, [window] {
-    int result = system("/usr/bin/runwiimote.sh &");
-    if(result == 0)
-        window->pushGui(new GuiMsgBox(window, _("Wiimote activated."), _("OK")));
-    else
-        window->pushGui(new GuiMsgBox(window, _("Error while running script."), _("OK")));
-});
+						// Return to UI and report result
+						window->postToUiThread([window, result]() {
+							if (result == 0)
+								window->pushGui(new GuiMsgBox(window, _("Wiimote successfully connected."), _("OK")));
+							else
+								window->pushGui(new GuiMsgBox(window, _("Connection failed."), _("OK")));
+						});
+						return 0;
+					}
+				));
+			},
+			_("CANCEL"), nullptr
+		));
+	});
 #endif
 
 	// Advmame Gamepad
