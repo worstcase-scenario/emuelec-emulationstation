@@ -986,7 +986,7 @@ void GuiMenu::createGamepadConfig(Window* window, GuiSettings* systemConfigurati
 			_("Please ensure your Wiimote is in pairing mode (press buttons 1+2).\n\nWhen all the LED's are blinking,\npress OK to start the connection.\n\nThis process can take a while, be patient!\n\nIf the LED's stop blinking before the wiimote has been successfully paired, press buttons 1+2 again."),
 			_("CANCEL"), [](){},
 			_("OK"), [window] {
-				window->pushGui(new GuiLoading<int>(window, _("SCANNING FOR WIIMOTE..."),
+				window->pushGui(new GuiLoading<int>(window, _("SCANNING FOR WIIMOTE...\n\nIf the LED's stop blinking before the wiimote has been successfully paired, press buttons 1+2 again."),
 					[window](auto /*gui*/) {
 						int result = system("/usr/bin/connectbtwii.sh");
 						window->postToUiThread([window, result]() {
