@@ -5641,7 +5641,7 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 		}, "iconControllers");
 		
 		s->addEntry(_("START LIBRESPOT"), false, [] {
-            system("systemctl kill -s SIGKILL librespot.service");
+            system("systemctl start librespot.service");
         }, "iconLibrestart");
 		
 		s->addEntry(_("KILL LIBRESPOT"), false, [] {
