@@ -30,10 +30,43 @@
 #include "utils/FileSystemUtil.h"
 #include "utils/StringUtil.h"
 
+#include <vector>
+
 #ifdef _ENABLEEMUELEC
 #include <regex>
 #include "utils/Platform.h"
 #endif
+
+namespace
+{
+	std::string getSplashRoot()
+	{
+		if (Utils::FileSystem::isDirectory("/storage/roms"))
+			return "/storage/roms/splash";
+
+		if (Utils::FileSystem::isDirectory("/roms"))
+			return "/roms/splash";
+
+		return "/storage/splash";
+	}
+
+	void removeExistingSplashMedia(const std::string& directory, const std::string& romStem, const std::string& keepPath)
+	{
+		static const std::vector<std::string> sExtensions = {
+			".png", ".jpg", ".jpeg", ".bmp", ".gif", ".mp4", ".mpg", ".mpeg", ".avi", ".mkv", ".mov", ".webm"
+		};
+
+		for (const auto& ext : sExtensions)
+		{
+			const std::string candidate = Utils::FileSystem::combine(directory, romStem + ext);
+			if (Utils::FileSystem::getGenericPath(candidate) == Utils::FileSystem::getGenericPath(keepPath))
+				continue;
+
+			if (Utils::FileSystem::exists(candidate))
+				Utils::FileSystem::removeFile(candidate);
+		}
+	}
+}
 
 GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(window),
 	mMenu(window, game->getName()), mReloadAll(false)
@@ -173,7 +206,7 @@ GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(wi
 				}
 
 				const std::string systemName = game->getSystem()->getName();
-				const std::string splashRoot = "/storage/splash";
+				const std::string splashRoot = getSplashRoot();
 				const std::string systemSplashDir = Utils::FileSystem::combine(splashRoot, systemName);
 
 				if (!Utils::FileSystem::exists(splashRoot) && !Utils::FileSystem::createDirectory(splashRoot))
@@ -201,6 +234,8 @@ GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(wi
 					return;
 				}
 
+				removeExistingSplashMedia(systemSplashDir, romStem, destinationPath);
+
 				if (Utils::FileSystem::exists(destinationPath) && !Utils::FileSystem::removeFile(destinationPath))
 				{
 					mWindow->pushGui(new GuiMsgBox(mWindow, _("UNABLE TO REMOVE EXISTING FILE."), _("OK")));
@@ -213,7 +248,9 @@ GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(wi
 					return;
 				}
 
-				mWindow->pushGui(new GuiMsgBox(mWindow, _("CUSTOM LOADING MEDIA SAVED."), _("OK")));
+				std::string successMessage = _("CUSTOM LOADING MEDIA SAVED.");
+				successMessage += "\n" + destinationPath;
+				mWindow->pushGui(new GuiMsgBox(mWindow, successMessage, _("OK")));
 			};
 
 			mWindow->pushGui(new GuiFileBrowser(mWindow, startDirectory, "",
