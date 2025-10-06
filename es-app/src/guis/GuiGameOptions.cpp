@@ -183,7 +183,7 @@ GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(wi
 	{
 		mMenu.addGroup(_("GAME"));
 
-		mMenu.addEntry(_("SET CUSTOM LOADING MEDIA"), false, [this, game]
+		mMenu.addEntry(_("SET GAME SPECIFIC SPLASH-LOADING MEDIA"), false, [this, game]
 		{
 			const std::string gamePath = game->getPath();
 			std::string startDirectory = Utils::FileSystem::getParent(gamePath);
