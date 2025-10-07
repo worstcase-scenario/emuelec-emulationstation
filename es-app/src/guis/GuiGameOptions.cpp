@@ -20,22 +20,19 @@
 #include "guis/GuiMenu.h"
 #include "ApiSystem.h"
 #include "guis/GuiImageViewer.h"
-#include "guis/GuiFileBrowser.h"
 #include "views/SystemView.h"
 #include "GuiGameAchievements.h"
 #include "guis/GuiGameScraper.h"
 #include "SaveStateRepository.h"
 #include "guis/GuiSaveState.h"
 #include "SystemConf.h"
+#ifdef _ENABLEEMUELEC
+#include "guis/GuiFileBrowser.h"
 #include "utils/FileSystemUtil.h"
 #include "utils/StringUtil.h"
-
 #include <vector>
-
-#ifdef _ENABLEEMUELEC
 #include <regex>
 #include "utils/Platform.h"
-#endif
 
 namespace
 {
@@ -67,7 +64,7 @@ namespace
 		}
 	}
 }
-
+#endif
 GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(window),
 	mMenu(window, game->getName()), mReloadAll(false)
 {
