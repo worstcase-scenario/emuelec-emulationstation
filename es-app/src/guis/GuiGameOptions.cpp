@@ -182,7 +182,8 @@ GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(wi
 	if (game->getType() == GAME)
 	{
 		mMenu.addGroup(_("GAME"));
-
+		
+#ifdef _ENABLEEMUELEC
 		mMenu.addEntry(_("SET GAME SPECIFIC SPLASH-LOADING MEDIA"), false, [this, game]
 		{
 			const std::string gamePath = game->getPath();
@@ -257,7 +258,8 @@ GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(wi
 				(GuiFileBrowser::FileTypes)(GuiFileBrowser::IMAGES | GuiFileBrowser::VIDEO), onFileSelected,
 				_("SELECT MEDIA FILE")));
 		});
-
+		
+#endif
                 if (SaveStateRepository::isEnabled(game))
 		{
 			mMenu.addEntry(_("SAVE STATES"), false, [window, game, this]
