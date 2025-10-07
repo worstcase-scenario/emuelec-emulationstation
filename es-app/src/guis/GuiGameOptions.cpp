@@ -20,22 +20,19 @@
 #include "guis/GuiMenu.h"
 #include "ApiSystem.h"
 #include "guis/GuiImageViewer.h"
-#include "guis/GuiFileBrowser.h"
 #include "views/SystemView.h"
 #include "GuiGameAchievements.h"
 #include "guis/GuiGameScraper.h"
 #include "SaveStateRepository.h"
 #include "guis/GuiSaveState.h"
 #include "SystemConf.h"
+#ifdef ENABLEEMUELEC
 #include "utils/FileSystemUtil.h"
 #include "utils/StringUtil.h"
-
+#include "guis/GuiFileBrowser.h"
 #include <vector>
-
-#ifdef _ENABLEEMUELEC
 #include <regex>
 #include "utils/Platform.h"
-#endif
 
 namespace
 {
@@ -67,6 +64,7 @@ namespace
 		}
 	}
 }
+#endif
 
 GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(window),
 	mMenu(window, game->getName()), mReloadAll(false)
@@ -83,7 +81,7 @@ GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(wi
 		image->setIsLinear(true);
 		image->setImage(logo);
 		mMenu.setSubTitle("fake");
-		mMenu.setTitleImage(image, true);		
+		mMenu.TitleImage(image, true);		
 	}
 
 	addChild(&mMenu);
@@ -182,6 +180,8 @@ GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(wi
 	if (game->getType() == GAME)
 	{
 		mMenu.addGroup(_("GAME"));
+		
+#ifdef ENABLEEMUELEC
 
 		mMenu.addEntry(_("SET CUSTOM LOADING MEDIA"), false, [this, game]
 		{
@@ -259,7 +259,9 @@ GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(wi
 		});
 
                 if (SaveStateRepository::isEnabled(game))
-		{
+#endif
+
+				{
 			mMenu.addEntry(_("SAVE STATES"), false, [window, game, this]
 			{
 				mWindow->pushGui(new GuiSaveState(mWindow, game, [this, game](SaveState* state)
