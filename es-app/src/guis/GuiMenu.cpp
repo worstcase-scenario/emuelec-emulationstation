@@ -342,19 +342,12 @@ std::shared_ptr<OptionListComponent<std::string>> GuiMenu::createSplashLoadingOp
 {
 	auto emuelec_splash_loading_mode = std::make_shared< OptionListComponent<std::string> >(window, _("LOADING SPLASH OPTION"), false);
 	std::vector<std::string> splashmode;
-	splashmode.push_back(_("SHOW CUSTOM SPLASH IMAGE")); // 0
-	splashmode.push_back(_("PLAY CUSTOM SPLASH VIDEO")); // 1
-	splashmode.push_back(_("PLAY STANDARD LOADING VIDEO")); // 2
-	splashmode.push_back(_("PLAY SYSTEM LOADING VIDEO")); // 3
-	splashmode.push_back(_("PLAY RANDOM SYSTEM LOADING VIDEO")); // 4
-	splashmode.push_back(_("PLAY RANDOM LOADING VIDEO")); // 5
-	splashmode.push_back(_("SHOW STANDARD LOADING IMAGE")); // 6
-	splashmode.push_back(_("SHOW SYSTEM SPLASH IMAGE")); // 7
-	splashmode.push_back(_("SHOW RANDOM SYSTEM SPLASH IMAGE")); // 8
-	splashmode.push_back(_("SHOW RANDOM SPLASH LOADING IMAGE")); // 9
+	splashmode.push_back(_("SHOW STANDARD SPLASH")); // 0
+	splashmode.push_back(_("SHOW CUSTOM SPLASH")); // 1
+	splashmode.push_back(_("SHOW RANDOM SPLASH")); // 2
 
 	std::string str_index = SystemConf::getInstance()->get("ee_splashloading");
-	int index = 6;
+	int index = 0;
 	if (!str_index.empty())
 		index = atoi(str_index.c_str());
 
@@ -371,13 +364,11 @@ std::shared_ptr<OptionListComponent<std::string>> GuiMenu::createSplashExitOptio
 {
 	auto emuelec_splash_exit_mode = std::make_shared< OptionListComponent<std::string> >(window, _("EXIT SPLASH OPTION"), false);
 	std::vector<std::string> splashmode;
-	splashmode.push_back(_("ENABLE CUSTOM EXIT-SPLASH IMAGE")); // 0
-	splashmode.push_back(_("ENABLE CUSTOM EXIT-SPLASH VIDEO")); // 1
-	splashmode.push_back(_("SHOW EXIT SPLASH IMAGE")); // 2
-	splashmode.push_back(_("PLAY EXIT SPLASH VIDEO")); // 3
+	splashmode.push_back(_("SHOW STANDARD SPLASH")); // 0
+	splashmode.push_back(_("PLAY CUSTOM SPLASH")); // 1
 
 	std::string str_index = SystemConf::getInstance()->get("ee_splashexit");
-	int index = 2;
+	int index = 0;
 	if (!str_index.empty())
 		index = atoi(str_index.c_str());
 
@@ -671,7 +662,7 @@ void GuiMenu::openEmuELECSettings()
 	});
 
 	// Splash Settings
-	s->addGroup(_("SPLASH SETTINGS"));
+	//s->addGroup(_("SPLASH SETTINGS"));
 	s->addEntry(_("CONFIGURE SPLASH OPTIONS"), true, [this] {
 		auto s = new GuiSettings(mWindow, _("SPLASH SETTINGS"));
 
@@ -679,14 +670,17 @@ void GuiMenu::openEmuELECSettings()
 	s->addWithLabel(_("SPLASH LOADING OPTION"), splashLoadingOptionList);
 
 	// File picker for custom splash image
-	s->addFileBrowser(_("CUSTOM SPLASH LOADING IMAGE"), "ee_customsplashimage", GuiFileBrowser::IMAGES);
-
-	// File picker for custom splash video
-	s->addFileBrowser(_("CUSTOM SPLASH LOADING VIDEO"), "ee_customsplashvideo", GuiFileBrowser::VIDEO);
+	s->addFileBrowser(_("CUSTOM SPLASH LOADING"), "ee_customsplash", (GuiFileBrowser::FileTypes) (GuiFileBrowser::FileTypes::IMAGES | GuiFileBrowser::FileTypes::VIDEO));
 
 	auto splashLoadingTime = std::make_shared<SliderComponent>(mWindow, 0.f, 100.f, 1.f, "seconds");
-	splashLoadingTime->setValue(atof(SystemConf::getInstance()->get("ee_splash_loading_duration").c_str()));
-	splashLoadingTime->setOnValueChanged([](const float &newVal) { 
+
+	auto splashDuration = SystemConf::getInstance()->get("ee_splash_loading_duration");
+	float fDuration = 0.f;
+	if (!splashDuration.empty())
+		fDuration = (float) atof(splashDuration.c_str());
+	splashLoadingTime->setValue(fDuration);
+
+	splashLoadingTime->setOnValueChanged([](const float &newVal) {
 		auto val = std::to_string((int)Math::round(newVal));
 		SystemConf::getInstance()->set("ee_splash_loading_duration", val);
 	});
@@ -695,23 +689,34 @@ void GuiMenu::openEmuELECSettings()
 	auto splashExitOptionList = createSplashExitOptionList(mWindow);
 	s->addWithLabel(_("SPLASH EXIT OPTION"), splashExitOptionList);
 
-	// File picker for custom splash image
-	s->addFileBrowser(_("CUSTOM EXIT-SPLASH IMAGE"), "ee_customexitsplashimage", GuiFileBrowser::IMAGES);
-
-	// File picker for custom exit-splash video
-	s->addFileBrowser(_("CUSTOM EXIT-SPLASH VIDEO"), "ee_customexitsplashvideo", GuiFileBrowser::VIDEO);
+	// File picker for custom splash image/video
+	s->addFileBrowser(_("CUSTOM SPLASH EXIT"), "ee_customexitsplash", (GuiFileBrowser::FileTypes) (GuiFileBrowser::FileTypes::IMAGES | GuiFileBrowser::FileTypes::VIDEO));
 
 	auto splashExitTime = std::make_shared<SliderComponent>(mWindow, 0.f, 100.f, 1.f, "seconds");
-	splashExitTime->setValue(atof(SystemConf::getInstance()->get("ee_splash_exit_duration").c_str()));
-	splashExitTime->setOnValueChanged([](const float &newVal) { 
+
+	splashDuration = SystemConf::getInstance()->get("ee_splash_exit_duration");
+	fDuration = 0.f;
+	if (!splashDuration.empty())
+		fDuration = (float) atof(splashDuration.c_str());
+	splashExitTime->setValue(fDuration);
+
+	splashExitTime->setOnValueChanged([](const float &newVal) {
 		auto val = std::to_string((int)Math::round(newVal));
 		SystemConf::getInstance()->set("ee_splash_exit_duration", val);
 	});
 	s->addWithLabel(_("SPLASH EXIT DURATION"), splashExitTime);
 
-	s->addSaveFunc([splashLoadingOptionList, splashExitOptionList, splashLoadingTime, splashExitTime] {
+	s->addSaveFunc([=] {
 		SystemConf::getInstance()->set("ee_splashloading", splashLoadingOptionList->getSelected());
 		SystemConf::getInstance()->set("ee_splashexit", splashExitOptionList->getSelected());
+
+		if (splashLoadingTime->getValue() == 0.f || splashExitTime->getValue() == 0.f) {
+			mWindow->displayNotificationMessage(_U("\uF011  ") + _("SETTING DURATION 0 WILL MAKE VIDEOS DEFAULT TO PLAY 3 SECONDS."));
+		}
+		if (splashLoadingTime->getValue() != 0.f || splashExitTime->getValue() != 0.f) {
+			mWindow->displayNotificationMessage(_U("\uF011  ") + _("SETTING DURATIONS GREATER THAN 0 WILL ADD TO LOADING/EXIT SPLASH TIMES."));
+		}
+
 		SystemConf::getInstance()->set("ee_splash_loading_duration", std::to_string((int)round(splashLoadingTime->getValue())));
 		SystemConf::getInstance()->set("ee_splash_exit_duration", std::to_string((int)round(splashExitTime->getValue())));
 		SystemConf::getInstance()->saveSystemConf();
@@ -5499,13 +5504,13 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 			_("YES"), [] { Utils::Platform::quitES(Utils::Platform::QuitMode::SHUTDOWN); },
 			_("NO"), nullptr));
 	}, "iconShutdown");
-
+#ifndef _ENABLEEMUELEC
 	s->addWithDescription(_("FAST SHUTDOWN SYSTEM"),_("Shutdown without saving metadata."), nullptr, [window] {
 		window->pushGui(new GuiMsgBox(window, _("REALLY SHUTDOWN WITHOUT SAVING METADATA?"), 
 			_("YES"), [] { Utils::Platform::quitES(Utils::Platform::QuitMode::FAST_SHUTDOWN); },
 			_("NO"), nullptr));
 	}, "iconFastShutdown");
-
+#endif
 
 #ifdef WIN32
 	if (Settings::getInstance()->getBool("ShowExit"))
