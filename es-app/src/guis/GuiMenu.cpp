@@ -671,7 +671,7 @@ void GuiMenu::openEmuELECSettings()
 	});
 
 	// Splash Settings
-	s->addGroup(_("SPLASH SETTINGS"));
+	//s->addGroup(_("SPLASH SETTINGS"));
 	s->addEntry(_("CONFIGURE SPLASH OPTIONS"), true, [this] {
 		auto s = new GuiSettings(mWindow, _("SPLASH SETTINGS"));
 
@@ -5075,7 +5075,7 @@ void GuiMenu::openSoundSettings()
 
 		// volume
 		auto volume = std::make_shared<SliderComponent>(mWindow, 0.f, 100.f, 1.f, "%");
-#ifndef _ENABLEEMUELEC
+#ifdef _ENABLEEMUELEC
 		std::string cfgAudioVolume = SystemConf::getInstance()->get("audio.volume");
 		if (!cfgAudioVolume.empty()) {
 			VolumeControl::getInstance()->setVolume((int)atoi(cfgAudioVolume.c_str()));
@@ -5090,7 +5090,7 @@ void GuiMenu::openSoundSettings()
 #if !WIN32
 			SystemConf::getInstance()->set("audio.volume", std::to_string((int)round(volume->getValue())));
 #endif
-#ifndef _ENABLEEMUELEC
+#ifdef _ENABLEEMUELEC
 			SystemConf::getInstance()->saveSystemConf();
 #endif
 		});
@@ -5492,13 +5492,13 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 			_("YES"), [] { Utils::Platform::quitES(Utils::Platform::QuitMode::SHUTDOWN); },
 			_("NO"), nullptr));
 	}, "iconShutdown");
-
+#ifndef _ENABLEEMUELEC
 	s->addWithDescription(_("FAST SHUTDOWN SYSTEM"),_("Shutdown without saving metadata."), nullptr, [window] {
 		window->pushGui(new GuiMsgBox(window, _("REALLY SHUTDOWN WITHOUT SAVING METADATA?"), 
 			_("YES"), [] { Utils::Platform::quitES(Utils::Platform::QuitMode::FAST_SHUTDOWN); },
 			_("NO"), nullptr));
 	}, "iconFastShutdown");
-
+#endif
 
 #ifdef WIN32
 	if (Settings::getInstance()->getBool("ShowExit"))
