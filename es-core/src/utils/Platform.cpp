@@ -1,5 +1,4 @@
 #include "Platform.h"
-
 #include <SDL_events.h>
 
 #if WIN32
