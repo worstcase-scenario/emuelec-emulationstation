@@ -279,8 +279,8 @@ msgstr "Screenscraper Spiel-ID"
 #, c-format
 msgid "This collection contains %i game:%s"
 msgid_plural "This collection contains %i games, including:%s"
-msgstr[0] "Diese Sammlung beinhaltet %i Spiel:/%s"
-msgstr[1] "Diese Sammlung beinhaltet %i Spiele, inklusive:%s"
+msgstr[0] "Diese Sammlung beinhaltet %i Titel:/%s"
+msgstr[1] "Diese Sammlung beinhaltet %i Titel, inklusive:%s"
 
 msgid "Collections"
 msgstr "Sammlungen"
@@ -2294,7 +2294,7 @@ msgid "VIEW THIS GAME'S ACHIEVEMENTS"
 msgstr "ERRUNGENSCHAFTEN DIESES SPIELS ANSEHEN"
 
 msgid "GAME"
-msgstr "SPIEL"
+msgstr "TITEL"
 
 msgid "SAVE STATES"
 msgstr "SPEICHERSTÄNDE"
@@ -3050,8 +3050,8 @@ msgstr[1] "%i EINTRÄGE"
 #, c-format
 msgid "%i GAME"
 msgid_plural "%i GAMES"
-msgstr[0] "%i SPIEL"
-msgstr[1] "%i SPIELE"
+msgstr[0] "%i TITEL"
+msgstr[1] "%i TITEL"
 
 msgid "NAVIGATION BAR"
 msgstr "NAVIGATIONSLEISTE"
