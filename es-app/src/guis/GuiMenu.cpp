@@ -29,7 +29,6 @@
 #include <SDL_events.h>
 #include <algorithm>
 #include "utils/Platform.h"
-
 #include "SystemConf.h"
 #include "ApiSystem.h"
 #include "InputManager.h"
