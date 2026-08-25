@@ -6525,7 +6525,6 @@ void GuiMenu::popSpecificConfigurationGui(Window* mWindow, std::string title, st
 			SystemConf::getInstance()->get(configName + ".integerscalescaling"));
 		systemConfiguration->addWithLabel(_("INTEGER SCALE ROUNDING"), integerscalescaling);
 		systemConfiguration->addSaveFunc([integerscalescaling, configName] { SystemConf::getInstance()->set(configName + ".integerscalescaling", integerscalescaling->getSelected()); });
-#endif
 	}
 
 	// bezel
