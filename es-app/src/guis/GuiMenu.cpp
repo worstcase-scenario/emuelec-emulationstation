@@ -1,5 +1,4 @@
 #include "guis/GuiMenu.h"
-
 #include "components/OptionListComponent.h"
 #include "components/SliderComponent.h"
 #include "components/SwitchComponent.h"
@@ -30,7 +29,6 @@
 #include <SDL_events.h>
 #include <algorithm>
 #include "utils/Platform.h"
-
 #include "SystemConf.h"
 #include "ApiSystem.h"
 #include "InputManager.h"
@@ -3921,11 +3919,26 @@ void GuiMenu::openGamesSettings()
 	}
 
 #ifdef _ENABLEEMUELEC
-	// Integer scale overscale
-	auto integerscaleoverscale_enabled = std::make_shared<OptionListComponent<std::string>>(mWindow, _("INTEGER SCALING (OVERSCALE)"));
-	integerscaleoverscale_enabled->addRange({ { _("AUTO"), "auto" },{ _("ON") , "1" },{ _("SMART") , "2" },{ _("OFF") , "0" } }, SystemConf::getInstance()->get("global.integerscaleoverscale"));
-	s->addWithLabel(_("INTEGER SCALING (OVERSCALE)"), integerscaleoverscale_enabled);
-	s->addSaveFunc([integerscaleoverscale_enabled] { SystemConf::getInstance()->set("global.integerscaleoverscale", integerscaleoverscale_enabled->getSelected()); });
+	// Integer scale axis
+	auto integerscaleaxis = std::make_shared<OptionListComponent<std::string>>(mWindow, _("INTEGER SCALE AXIS"));
+	integerscaleaxis->addRange({ { _("AUTO"), "auto" },
+		{ "Y", "0" }, { "Y + X", "1" }, { "Y + X.5", "2" },
+		{ "Y.5 + X.5", "3" }, { "X", "4" }, { "X.5", "5" } },
+		SystemConf::getInstance()->get("global.integerscaleaxis"));
+	s->addWithDescription(_("INTEGER SCALE AXIS"),
+		_("Scale height, width, or both. Half steps only apply to high resolution sources."),
+		integerscaleaxis);
+	s->addSaveFunc([integerscaleaxis] { SystemConf::getInstance()->set("global.integerscaleaxis", integerscaleaxis->getSelected()); });
+
+	// Integer scale rounding
+	auto integerscalescaling = std::make_shared<OptionListComponent<std::string>>(mWindow, _("INTEGER SCALE ROUNDING"));
+	integerscalescaling->addRange({ { _("AUTO"), "auto" },
+		{ _("UNDERSCALE"), "0" }, { _("OVERSCALE"), "1" }, { _("SMART"), "2" } },
+		SystemConf::getInstance()->get("global.integerscalescaling"));
+	s->addWithDescription(_("INTEGER SCALE ROUNDING"),
+		_("Round down or up to the next integer. 'Smart' falls back when margins get too large."),
+		integerscalescaling);
+	s->addSaveFunc([integerscalescaling] { SystemConf::getInstance()->set("global.integerscalescaling", integerscalescaling->getSelected()); });
 #endif
 	// Shaders preset
 #ifndef _ENABLEEMUELEC	
@@ -5557,8 +5570,15 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 				Utils::Platform::quitES(Utils::Platform::QuitMode::QUIT);
 			}, _("NO"), nullptr));
 		}, "iconControllers");
-
 		
+		s->addEntry(_("START LIBRESPOT"), false, [] {
+            system("systemctl start librespot.service");
+        }, "iconLibrestart");
+		
+		s->addEntry(_("KILL LIBRESPOT"), false, [] {
+            system("systemctl kill -s SIGKILL librespot.service");
+        }, "iconLibrekill");
+				
 		s->addEntry(_("REBOOT FROM NAND"), false, [window] {
 			window->pushGui(new GuiMsgBox(window, _("REALLY REBOOT FROM NAND?"), _("YES"),
 				[] {
@@ -6485,11 +6505,27 @@ void GuiMenu::popSpecificConfigurationGui(Window* mWindow, std::string title, st
 		integerscale_enabled->addRange({ { _("AUTO"), "auto" },{ _("ON") , "1" },{ _("OFF"), "0" } }, SystemConf::getInstance()->get(configName + ".integerscale"));
 		systemConfiguration->addWithLabel(_("INTEGER SCALING (PIXEL PERFECT)"), integerscale_enabled);
 		systemConfiguration->addSaveFunc([integerscale_enabled, configName] { SystemConf::getInstance()->set(configName + ".integerscale", integerscale_enabled->getSelected()); });
-#ifdef _ENABLEEMUELEC		
-        auto integerscaleoverscale_enabled = std::make_shared<OptionListComponent<std::string>>(mWindow, _("INTEGER SCALING (OVERSCALE)"));
+#ifdef _ENABLEEMUELEC
+		auto integerscaleoverscale_enabled = std::make_shared<OptionListComponent<std::string>>(mWindow, _("INTEGER SCALING (OVERSCALE)"));
 		integerscaleoverscale_enabled->addRange({ { _("AUTO"), "auto" },{ _("ON") , "1" },{ _("SMART") , "2" },{ _("OFF"), "0" } }, SystemConf::getInstance()->get(configName + ".integerscaleoverscale"));
 		systemConfiguration->addWithLabel(_("INTEGER SCALING (OVERSCALE)"), integerscaleoverscale_enabled);
 		systemConfiguration->addSaveFunc([integerscaleoverscale_enabled, configName] { SystemConf::getInstance()->set(configName + ".integerscaleoverscale", integerscaleoverscale_enabled->getSelected()); });
+
+		auto integerscaleaxis = std::make_shared<OptionListComponent<std::string>>(mWindow, _("INTEGER SCALE AXIS"));
+		integerscaleaxis->addRange({ { _("AUTO"), "auto" },
+			{ "Y", "0" }, { "Y + X", "1" }, { "Y + X.5", "2" },
+			{ "Y.5 + X.5", "3" }, { "X", "4" }, { "X.5", "5" } },
+			SystemConf::getInstance()->get(configName + ".integerscaleaxis"));
+		systemConfiguration->addWithLabel(_("INTEGER SCALE AXIS"), integerscaleaxis);
+		systemConfiguration->addSaveFunc([integerscaleaxis, configName] { SystemConf::getInstance()->set(configName + ".integerscaleaxis", integerscaleaxis->getSelected()); });
+
+		auto integerscalescaling = std::make_shared<OptionListComponent<std::string>>(mWindow, _("INTEGER SCALE ROUNDING"));
+		integerscalescaling->addRange({ { _("AUTO"), "auto" },
+			{ _("UNDERSCALE"), "0" }, { _("OVERSCALE"), "1" }, { _("SMART"), "2" } },
+			SystemConf::getInstance()->get(configName + ".integerscalescaling"));
+		systemConfiguration->addWithLabel(_("INTEGER SCALE ROUNDING"), integerscalescaling);
+		systemConfiguration->addSaveFunc([integerscalescaling, configName] { SystemConf::getInstance()->set(configName + ".integerscalescaling", integerscalescaling->getSelected()); });
+#endif
 	}
 
 	// bezel
