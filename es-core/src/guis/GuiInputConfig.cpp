@@ -115,12 +115,23 @@ void GuiInputConfig::initInputConfigStructure(InputConfig* target)
 
 	if (target->getDeviceId() >= 0)
 	{
+#ifdef _ENABLEEMUELEC
+		// emuelec list order: 0=Up,1=Down,2=Left,3=Right,4=Start,5=Select,6=a,7=b,8=x,9=y,...
+		// so the "primary button" and "dpad" indices differ from the default layout below
+		GUI_INPUT_CONFIG_LIST[6].skippable = (target->getDeviceNbButtons() <= 1) || (target->getDeviceNbButtons() == 5 && target->getDeviceNbAxes() == 0 && target->getDeviceNbHats() == 0);
+
+		GUI_INPUT_CONFIG_LIST[0].skippable = 
+		GUI_INPUT_CONFIG_LIST[1].skippable = 
+		GUI_INPUT_CONFIG_LIST[2].skippable = 
+		GUI_INPUT_CONFIG_LIST[3].skippable = target->getDeviceNbHats() == 0;
+#else
 		GUI_INPUT_CONFIG_LIST[1].skippable = (target->getDeviceNbButtons() <= 1) || (target->getDeviceNbButtons() == 5 && target->getDeviceNbAxes() == 0 && target->getDeviceNbHats() == 0);
 
 		GUI_INPUT_CONFIG_LIST[6].skippable = 
 		GUI_INPUT_CONFIG_LIST[7].skippable = 
 		GUI_INPUT_CONFIG_LIST[8].skippable = 
 		GUI_INPUT_CONFIG_LIST[9].skippable = target->getDeviceNbHats() == 0;
+#endif
 	}
 }
 
@@ -252,6 +263,16 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 
 				mHoldingInput = false;
 
+#ifdef _ENABLEEMUELEC
+				// emuelec: if this button was held past the skip threshold but this
+				// entry isn't skippable, reject it outright - no assignment, no advance
+				if (mHeldTime >= HOLD_TO_SKIP_MS && !GUI_INPUT_CONFIG_LIST[i].skippable)
+				{
+					mAllInputs.clear();
+					return true;
+				}
+#endif
+
 				if (mHeldInput.type == InputType::TYPE_BUTTON)
 				{
 					auto altAxis = mAllInputs.where([&](auto x) { return x.device == mHeldInput.device && x.type == InputType::TYPE_AXIS; });
@@ -279,6 +300,13 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 		bool skippable = GUI_INPUT_CONFIG_LIST[mList->getCursorId()].skippable;
 		mSubtitle2->setOpacity(skippable * 255);
 	});
+
+#ifdef _ENABLEEMUELEC
+	// emuelec: setCursorChangedCallback above isn't invoked until the cursor actually
+	// moves, so without this the hint incorrectly shows on load even when the
+	// initially-focused row isn't skippable
+	mSubtitle2->setOpacity(GUI_INPUT_CONFIG_LIST[mList->getCursorId()].skippable * 255);
+#endif
 
 	// make the first one say "PRESS ANYTHING" if we're re-configuring everything
 	if(mConfiguringAll)
@@ -369,6 +397,38 @@ void GuiInputConfig::onSizeChanged()
 
 void GuiInputConfig::update(int deltaTime)
 {
+#ifdef _ENABLEEMUELEC
+	// emuelec: keep tracking hold time for any button (not just skippable ones)
+	// so the input_handler in the constructor can reject a long-hold on a
+	// non-skippable input at release time instead of assigning it. Only
+	// skippable entries actually auto-skip/advance here though.
+	if(mConfiguringRow && mHoldingInput)
+	{
+		bool skippable = GUI_INPUT_CONFIG_LIST[mHeldInputId].skippable;
+
+		int prevSec = mHeldTime / 1000;
+		mHeldTime += deltaTime;
+		int curSec = mHeldTime / 1000;
+
+		if(skippable && mHeldTime >= HOLD_TO_SKIP_MS)
+		{
+			setNotDefined(mMappings.at(mHeldInputId));
+			clearAssignment(mHeldInputId);
+			mHoldingInput = false;
+			rowDone();
+		}else if(skippable){
+			if(prevSec != curSec)
+			{
+				// crossed the second boundary, update text
+				const auto& text = mMappings.at(mHeldInputId);
+				char strbuf[256];
+				snprintf(strbuf, 256, ngettext("HOLD FOR %iS TO SKIP", "HOLD FOR %iS TO SKIP", HOLD_TO_SKIP_MS/1000 - curSec), HOLD_TO_SKIP_MS/1000 - curSec); 
+				text->setText(strbuf);
+				text->setColor(ThemeData::getMenuTheme()->Text.color);
+			}
+		}
+	}
+#else
 	if(mConfiguringRow && mHoldingInput && GUI_INPUT_CONFIG_LIST[mHeldInputId].skippable)
 	{
 		int prevSec = mHeldTime / 1000;
@@ -393,6 +453,7 @@ void GuiInputConfig::update(int deltaTime)
 			}
 		}
 	}
+#endif
 }
 
 // move cursor to the next thing if we're configuring all, 
