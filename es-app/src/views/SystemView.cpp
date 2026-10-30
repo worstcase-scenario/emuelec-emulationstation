@@ -28,6 +28,7 @@
 #include "BindingManager.h"
 #include "guis/GuiRetroAchievements.h"
 #include "components/CarouselComponent.h"
+#include "utils/Platform.h"
 #include <cstring>
 #include <SDL.h>
 
