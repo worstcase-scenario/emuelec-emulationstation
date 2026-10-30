@@ -28,6 +28,8 @@
 #include "BindingManager.h"
 #include "guis/GuiRetroAchievements.h"
 #include "components/CarouselComponent.h"
+#include <cstring>
+#include <SDL.h>
 
 SystemView::SystemView(Window* window) : GuiComponent(window),
 	mViewNeedsReload(true),
@@ -536,7 +538,22 @@ bool SystemView::input(InputConfig* config, Input input)
 
 				LOG(LogInfo) << "Launching system command: " << command;
 
-				int exitCode = system(command.c_str());
+				// release the display like FileData::launchGame does, otherwise
+				// the started program gets no display under KMSDRM
+				const char* videoDriver = SDL_GetCurrentVideoDriver();
+				const bool hideWindow = (videoDriver != nullptr && strcmp(videoDriver, "KMSDRM") == 0);
+
+				AudioManager::getInstance()->deinit();
+				mWindow->deinit(hideWindow);
+
+				Utils::Platform::ProcessStartInfo process(command);
+				process.window = hideWindow ? NULL : mWindow;
+				int exitCode = process.run();
+
+				mWindow->init(hideWindow);
+				AudioManager::getInstance()->init();
+				mWindow->normalizeNextUpdate();
+				mWindow->reactivateGui();
 
 				LOG(LogInfo) << "System command exited with code " << exitCode;
 
